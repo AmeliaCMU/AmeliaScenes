@@ -10,7 +10,7 @@ import random
 from datetime import datetime
 from easydict import EasyDict
 from math import floor
-from natsort import natsorted
+# from natsort import natsorted
 from typing import Tuple
 
 from amelia_scenes.utils import common
@@ -118,7 +118,7 @@ def remove_blacklisted(blacklist: list, file_list: list):
     return file_list
 
 
-def get_airport_files(airport: str, data_prep: dict, shuffle: bool = True):
+def get_airport_files(airport: str, data_prep: dict):
     """ Gets the airport data file list from the specified input directory and returns a random set.
 
     Inputs
@@ -126,12 +126,15 @@ def get_airport_files(airport: str, data_prep: dict, shuffle: bool = True):
         airport[str]: airport IATA
         data_prep[dict]: dictionary containing data preparation parameters.
     """
-    in_data_dir = natsorted(os.path.join(data_prep.in_data_dir, airport))
+
+    in_data_dir = os.path.join(data_prep.in_data_dir, airport)
+
     airport_files = [os.path.join(airport, fp)
                      for fp in os.listdir(in_data_dir)]
-    if shuffle:
-        random.seed(data_prep.seed)
-        random.shuffle(airport_files)
+    # airport_files = natsorted(airport_files)
+
+    random.seed(data_prep.seed)
+    random.shuffle(airport_files)
     return airport_files
 
 
@@ -182,7 +185,7 @@ def create_day_splits(data_prep: dict, airport_list: list):
         data_prep[dict]: dictionary containing data preparation parameters.
         airport_list[list]: list of all supported airports in IATA code
     """
-    n_train, n_val = data_prep.day_splits.train_val
+    n_train, n_val, n_test = data_prep.day_splits.train_val_test
     train_val_perc = data_prep.day_splits.train_val_perc
     for split in ['train', 'val', 'test']:
         split_dir = os.path.join(data_prep.in_data_dir, f"{split}_splits")
@@ -192,7 +195,7 @@ def create_day_splits(data_prep: dict, airport_list: list):
         # Collect all airport files in current airport and get the unique days for which data was
         # collected.
         airport_files = np.asarray(get_airport_files(airport, data_prep))
-        days_per_file = np.asarray([datetime.utcfromtimestamp(
+        days_per_file = np.asarray([datetime.fromtimestamp(
             int(f.split('/')[-1].split('.')[0].split('_')[-1])).day for f in airport_files])
         days = np.unique(days_per_file)
         num_days = days.shape[0]
@@ -235,8 +238,8 @@ def create_month_splits(data_prep: dict, airport_list: list):
         data_prep[dict]: dictionary containing data preparation parameters.
         airport_list[list]: list of all supported airports in IATA code
     """
-    n_train, n_val = data_prep.day_splits.train_val
-    train_val_perc = data_prep.day_splits.train_val_perc
+    n_train, n_val, n_test = data_prep.day_splits.train_val_test
+    train_val_perc = data_prep.month_splits.train_val_perc
     for split in ['train', 'val', 'test']:
         split_dir = os.path.join(data_prep.in_data_dir, f"{split}_splits")
         os.makedirs(split_dir, exist_ok=True)
