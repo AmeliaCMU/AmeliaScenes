@@ -20,4 +20,3 @@ git clone git@github.com:AmeliaCMU/AmeliaScenes.git
 cd AmeliaScenes
 pip install -e .
 ```
-

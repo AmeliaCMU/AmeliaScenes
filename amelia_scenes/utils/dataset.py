@@ -238,7 +238,7 @@ def create_month_splits(data_prep: dict, airport_list: list):
         data_prep[dict]: dictionary containing data preparation parameters.
         airport_list[list]: list of all supported airports in IATA code
     """
-    n_train, n_val, n_test = data_prep.day_splits.train_val_test
+    n_train, n_val, n_test = data_prep.month_splits.train_val_test
     train_val_perc = data_prep.month_splits.train_val_perc
     for split in ['train', 'val', 'test']:
         split_dir = os.path.join(data_prep.in_data_dir, f"{split}_splits")
@@ -248,7 +248,7 @@ def create_month_splits(data_prep: dict, airport_list: list):
         # Collect all airport files in current airport and get the unique days for which data was
         # collected.
         airport_files = np.asarray(get_airport_files(airport, data_prep))
-        month_per_file = np.asarray([datetime.utcfromtimestamp(
+        month_per_file = np.asarray([datetime.fromtimestamp(
             int(f.split('/')[-1].split('.')[0].split('_')[-1])).month for f in airport_files])
         months = np.unique(month_per_file)
         num_months = months.shape[0]
