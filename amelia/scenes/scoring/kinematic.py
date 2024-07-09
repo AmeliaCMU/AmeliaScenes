@@ -2,13 +2,13 @@
 import numpy as np
 import pandas as pd
 
-import scenes.utils.common as C
-import scenes.utils.global_masks as G
+import amelia.scenes.utils.common as C
+import amelia.scenes.utils.global_masks as G
 
 from easydict import EasyDict
 from typing import Tuple, Union
 
-from scenes.utils.common import WEIGHTS
+from amelia.scenes.utils.common import WEIGHTS
 
 # --------------------------------------------------------------------------------------------------
 # Kinematic score wrapper

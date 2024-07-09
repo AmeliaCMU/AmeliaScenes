@@ -13,7 +13,7 @@ from math import floor
 # from natsort import natsorted
 from typing import Tuple
 
-from scenes.utils import common
+from amelia.scenes.utils import common
 
 
 def load_assets(input_dir: str, airport: str) -> Tuple:

@@ -2,7 +2,7 @@ import numpy as np
 
 from easydict import EasyDict
 
-from scenes.utils.common import WEIGHTS, AIRCRAFT
+from amelia.scenes.utils.common import WEIGHTS, AIRCRAFT
 
 
 def compute_simple_scene_crowdedness(scene: EasyDict, max_agents: int):

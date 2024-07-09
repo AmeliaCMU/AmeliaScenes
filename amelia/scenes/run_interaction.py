@@ -1,7 +1,7 @@
-from scenes.scene_utils.common import Status as s
-import scene_utils.common as C
-import scene_utils.scores as S
 import scene_utils.interaction_metrics as M
+import scene_utils.scores as S
+import scene_utils.common as C
+from scenes.scene_utils.common import Status as s
 from tqdm import tqdm
 import glob
 import matplotlib.pyplot as plt

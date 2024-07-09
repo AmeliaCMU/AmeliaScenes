@@ -2,7 +2,7 @@ import os
 
 from easydict import EasyDict
 
-from scenes.utils.common import SUPPORTED_AIRPORTS
+from amelia.scenes.utils.common import SUPPORTED_AIRPORTS
 
 
 def run(
@@ -18,16 +18,16 @@ def run(
 ) -> None:
     traj_data_dir = f"traj_data_{traj_version}"
     if to_process == 'scenes':
-        from scenes.processing.src.scene_processor import SceneProcessor as Pr
+        from amelia.scenes.processing.scene_processor import SceneProcessor as Pr
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'raw_trajectories')
         out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes')
     elif to_process == 'metas':
-        from scenes.processing.src.scene_meta_processor import SceneMetaProcessor as Pr
+        from amelia.scenes.processing.scene_meta_processor import SceneMetaProcessor as Pr
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes')
         out_data_dir = os.path.join(
             base_dir, traj_data_dir, 'proc_scenes_meta')
     else:
-        from scenes.processing.src.full_processor import SceneProcessor as Pr
+        from amelia.scenes.processing.full_processor import SceneProcessor as Pr
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'raw_trajectories')
         out_data_dir = os.path.join(
             base_dir, traj_data_dir, 'proc_full_scenes')
