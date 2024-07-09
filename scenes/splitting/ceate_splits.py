@@ -2,8 +2,8 @@ import os
 
 from easydict import EasyDict
 
-from amelia_scenes.utils import dataset
-from amelia_scenes.utils.common import SUPPORTED_AIRPORTS
+from scenes.utils import dataset
+from scenes.utils.common import SUPPORTED_AIRPORTS
 
 
 def run(base_dir: str, traj_version: str, split_type: str, seed: int) -> None:
