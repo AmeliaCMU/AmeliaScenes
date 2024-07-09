@@ -158,7 +158,7 @@ python create_splits.py --split_type [random | day | month] \
 
 #### Expected Output
 
-For the `kbos` generated scene and a `--split_type random`, the script should generate the following files:
+For the `kbos` generated scene and the argument `--split_type` as `random`, the script should generate the following files:
 
 ```bash
 |-- datasets
