@@ -150,7 +150,7 @@ def create_random_splits(data_prep: EasyDict, airport_list: list):
     """
     n_train, n_val, n_test = data_prep.random_splits.train_val_test
     for split in ['train', 'val', 'test']:
-        split_dir = os.path.join(data_prep.in_data_dir, f"{split}_splits")
+        split_dir = os.path.join(data_prep.out_data_dir, f"{split}_splits")
         os.makedirs(split_dir, exist_ok=True)
 
     for airport in airport_list:
@@ -163,15 +163,15 @@ def create_random_splits(data_prep: EasyDict, airport_list: list):
 
         # Write the out the splits
         train_list = airport_files[:N_train]
-        with open(f"{data_prep.in_data_dir}/train_splits/{filename}.txt", 'w') as fp:
+        with open(f"{data_prep.out_data_dir}/train_splits/{filename}.txt", 'w') as fp:
             fp.write('\n'.join(train_list))
 
         val_list = airport_files[N_train:N_train+N_val]
-        with open(f"{data_prep.in_data_dir}/val_splits/{filename}.txt", 'w') as fp:
+        with open(f"{data_prep.out_data_dir}/val_splits/{filename}.txt", 'w') as fp:
             fp.write('\n'.join(val_list))
 
         test_list = airport_files[N_train+N_val:]
-        with open(f"{data_prep.in_data_dir}/test_splits/{filename}.txt", 'w') as fp:
+        with open(f"{data_prep.out_data_dir}/test_splits/{filename}.txt", 'w') as fp:
             fp.write('\n'.join(test_list))
 
 
@@ -188,7 +188,7 @@ def create_day_splits(data_prep: dict, airport_list: list):
     n_train, n_val, n_test = data_prep.day_splits.train_val_test
     train_val_perc = data_prep.day_splits.train_val_perc
     for split in ['train', 'val', 'test']:
-        split_dir = os.path.join(data_prep.in_data_dir, f"{split}_splits")
+        split_dir = os.path.join(data_prep.out_data_dir, f"{split}_splits")
         os.makedirs(split_dir, exist_ok=True)
 
     for airport in airport_list:
@@ -215,16 +215,16 @@ def create_day_splits(data_prep: dict, airport_list: list):
 
         N_train = floor(len(train_val_files) * n_train)
         train_list = train_val_files[:N_train]
-        with open(f"{data_prep.in_data_dir}/train_splits/{filename}.txt", 'w') as fp:
+        with open(f"{data_prep.out_data_dir}/train_splits/{filename}.txt", 'w') as fp:
             fp.write('\n'.join(train_list))
 
         val_list = train_val_files[N_train:]
-        with open(f"{data_prep.in_data_dir}/val_splits/{filename}.txt", 'w') as fp:
+        with open(f"{data_prep.out_data_dir}/val_splits/{filename}.txt", 'w') as fp:
             fp.write('\n'.join(val_list))
 
         test_idx = np.in1d(days_per_file, test_days)
         test_list = airport_files[test_idx].tolist()
-        with open(f"{data_prep.in_data_dir}/test_splits/{filename}.txt", 'w') as fp:
+        with open(f"{data_prep.out_data_dir}/test_splits/{filename}.txt", 'w') as fp:
             fp.write('\n'.join(test_list))
 
 
@@ -241,7 +241,7 @@ def create_month_splits(data_prep: dict, airport_list: list):
     n_train, n_val, n_test = data_prep.month_splits.train_val_test
     train_val_perc = data_prep.month_splits.train_val_perc
     for split in ['train', 'val', 'test']:
-        split_dir = os.path.join(data_prep.in_data_dir, f"{split}_splits")
+        split_dir = os.path.join(data_prep.out_data_dir, f"{split}_splits")
         os.makedirs(split_dir, exist_ok=True)
 
     for airport in airport_list:
@@ -268,14 +268,14 @@ def create_month_splits(data_prep: dict, airport_list: list):
 
         N_train = floor(len(train_val_files) * n_train)
         train_list = train_val_files[:N_train]
-        with open(f"{data_prep.in_data_dir}/train_splits/{filename}.txt", 'w') as fp:
+        with open(f"{data_prep.out_data_dir}/train_splits/{filename}.txt", 'w') as fp:
             fp.write('\n'.join(train_list))
 
         val_list = train_val_files[N_train:]
-        with open(f"{data_prep.in_data_dir}/val_splits/{filename}.txt", 'w') as fp:
+        with open(f"{data_prep.out_data_dir}/val_splits/{filename}.txt", 'w') as fp:
             fp.write('\n'.join(val_list))
 
         test_idx = np.in1d(month_per_file, test_months)
         test_list = airport_files[test_idx].tolist()
-        with open(f"{data_prep.in_data_dir}/test_splits/{filename}.txt", 'w') as fp:
+        with open(f"{data_prep.out_data_dir}/test_splits/{filename}.txt", 'w') as fp:
             fp.write('\n'.join(test_list))

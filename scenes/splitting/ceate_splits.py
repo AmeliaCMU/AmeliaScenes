@@ -10,7 +10,7 @@ def run(base_dir: str, traj_version: str, split_type: str, seed: int) -> None:
     traj_data_dir = f"traj_data_{traj_version}"
     config = EasyDict({
         "in_data_dir": os.path.join(base_dir, traj_data_dir, 'proc_full_scenes'),
-        "out_data_dir": os.path.join(base_dir, traj_data_dir),
+        "out_data_dir": os.path.join(base_dir, traj_data_dir, 'splits'),
         "seed": seed,
         "split_type": split_type,
         "random_splits": {
