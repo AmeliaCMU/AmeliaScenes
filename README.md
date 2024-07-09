@@ -49,7 +49,7 @@ conda activate amelia
 Once you've installed the tools, and created the amelia enviroment. Run:
 
 ```bash
-cd scenes/scene_processing
+cd amelia/scenes
 python run_processor.py --airport [airport_icao] --parallel
 ```
 
@@ -61,7 +61,7 @@ Where:
 Additional parameters can also be specified:
 
 ```bash
-cd scenes/scene_processing
+cd amelia/scenes
 python run_processor.py --airport [airport_icao] --to_process [scenes | metas | both] --parallel \
                         # --to_process [to_process] \
                         --base_dir [path_to_dataset] \
@@ -130,7 +130,7 @@ The output scenes will be in:
 Once the scenes are generated, the `create_splits.py` script can be run to split the dataset. The script can be run as follows:
 
 ``` bash
-cd scenes/splitting
+cd amelia/scenes
 python create_splits.py --split_type [random | day | month]
 ```
 
@@ -144,7 +144,7 @@ Where:
 Additional parameters can also be specified:
 
 ``` bash
-cd scenes/splitting
+cd amelia/scenes
 python create_splits.py --split_type [random | day | month] \
                         --base_dir [path_to_dataset] \
                         --traj_version [version] \
