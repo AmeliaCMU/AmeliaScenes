@@ -2,7 +2,7 @@
 
 ## Installation
 
-Installation can be done by installing the Amelia Framework or the AmeliaScenes repository only
+Installation can be done by installing the AmeliaScenes repository or the complete Amelia Framework
 
 ### Creating an environment
 
@@ -15,7 +15,7 @@ conda create --name amelia python=3.9
 conda activate amelia
 ```
 
-### Installing AmeliaScenes
+## Installing AmeliaScenes
 
 Download the GitHub repository and install requirements:
 
