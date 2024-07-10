@@ -6,7 +6,7 @@ AmeliaScenes is an automated method to select relevant ego-agents and produce di
 
 To run this repository, you first need to download the amelia dataset. Follow the instructions [here]().
 
-Make sure the dataset is structured as follows: 
+Make sure the dataset is structured as follows:
 
 ```bash
 |-- datasets
