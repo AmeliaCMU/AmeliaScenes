@@ -47,6 +47,8 @@ class SceneMetaProcessor:
         self.max_agents = config.max_agents
         self.min_valid_points = config.min_valid_points
 
+        self.n_jobs = config.jobs
+
         limits_file = os.path.join(
             config.assets_dir, self.airport, 'limits.json')
         with open(limits_file, 'r') as fp:
@@ -80,8 +82,8 @@ class SceneMetaProcessor:
         """
         # TODO: debug parallel processing
         if self.parallel:
-            Parallel(n_jobs=32)(delayed(self.process_file)(f)
-                                for f in tqdm(self.data_files))
+            Parallel(n_jobs=self.n_jobs)(delayed(self.process_file)(f)
+                                         for f in tqdm(self.data_files))
         else:
             for f in tqdm(self.data_files):
                 self.process_file(f)

@@ -69,7 +69,8 @@ python run_processor.py --airport [airport_icao] --to_process [scenes | metas | 
                         --parallel [parallel] \
                         --overwite [overwite] \
                         --perc_process [percentage] \
-                        --seed [seed]
+                        --seed [seed] \
+                        --jobs [jobs]
 ```
 
 Where:
@@ -84,6 +85,8 @@ Where:
 - `[overwrite]`: If the processing should overwrite the existing data. By default it is set to `True`.
 - `[perc_process]`: Top limit vizualization of the data being processed. By default it is set to `1.0`.
 - `[seed]`: Seed for the random number generator. By default it is set to `42`.
+- `[jobs]`: Number of Python worker processes to be used in parallel. By default it is set to `-1`, which will use all available CPUs.
+
 
 #### Expected output
 
