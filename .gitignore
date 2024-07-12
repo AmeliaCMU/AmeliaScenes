@@ -170,4 +170,7 @@ cython_debug/
 #.idea/
 
 # Macos
-.DS_Store
+*.DS_Store
+
+
+!datasets/.gitkeep
