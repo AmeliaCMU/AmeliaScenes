@@ -53,6 +53,8 @@ class SceneProcessor:
         self.max_agents = config.max_agents
         self.min_valid_points = config.min_valid_points
 
+        self.n_jobs = config.jobs
+
         limits_file = os.path.join(
             config.assets_dir, self.airport, 'limits.json')
         with open(limits_file, 'r') as fp:
@@ -93,8 +95,8 @@ class SceneProcessor:
 
         # TODO: validate self.parallel works
         if self.parallel:
-            scenes = Parallel(n_jobs=32)(delayed(self.process_file)(f)
-                                         for f in tqdm(self.data_files))
+            scenes = Parallel(n_jobs=self.n_jobs)(delayed(self.process_file)(f)
+                                                  for f in tqdm(self.data_files))
             # Unpacking results
             for i in range(len(scenes)):
                 res = scenes.pop()

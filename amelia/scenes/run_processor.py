@@ -14,7 +14,8 @@ def run(
     overwrite: bool,
     perc_process: float,
     to_process: str,
-    seed: int
+    seed: int,
+    jobs: int
 ) -> None:
     traj_data_dir = f"traj_data_{traj_version}"
     if to_process == 'scenes':
@@ -48,7 +49,8 @@ def run(
         "min_agents": 2,
         "max_agents": 15,
         "min_valid_points": 2,
-        "seed": seed
+        "seed": seed,
+        "jobs": jobs
     })
 
     Pr(config=config).process_data()
@@ -69,6 +71,7 @@ if __name__ == "__main__":
     parser.add_argument("--to_process", default='both',
                         choices=['scenes', 'metas', 'both'])
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--jobs", type=int, default=-1)
     args = parser.parse_args()
 
     run(**vars(args))
