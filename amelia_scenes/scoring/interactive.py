@@ -2,8 +2,8 @@ import itertools
 import networkx as nx
 import numpy as np
 
-import amelia.scenes.utils.common as C
-import amelia.scenes.utils.global_masks as G
+import amelia_scenes.utils.common as C
+import amelia_scenes.utils.global_masks as G
 
 from easydict import EasyDict
 from enum import Enum

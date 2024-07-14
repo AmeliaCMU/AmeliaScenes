@@ -1,25 +1,24 @@
+from run_individual import compute_metrics as compute_individual_metrics
+from run_interaction import compute_metrics as compute_interaction_metrics
+from amelia_scenes.scene_utils.common import Status as s
+import amelia_scenes.scene_utils.common as C
+import amelia_scenes.scene_utils.scores as S
+from tqdm import tqdm
 import glob
 import numpy as np
 import os
 import pickle
-import random 
+import random
 random.seed(42)
 np.set_printoptions(suppress=True)
 
-from tqdm import tqdm
-
-import scene_utils.scores as S
-import scene_utils.common as C
- 
-from scene_utils.common import Status as s
-from run_interaction import compute_metrics as compute_interaction_metrics
-from run_individual import compute_metrics as compute_individual_metrics
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--airport", type=str, default="ksea", choices=["ksea", "kbos", "kmdw", "kewr"])
-    parser.add_argument("--base_dir", type=str, default="../../datasets/swim")
+    parser.add_argument("--airport", type=str, default="ksea",
+                        choices=["ksea", "kbos", "kmdw", "kewr"])
+    parser.add_argument("--base_dir", type=str, default="../datasets/swim")
     parser.add_argument("--out_dir", type=str, default="./out")
     parser.add_argument("--plot", action="store_true")
     parser.add_argument("--num_scenes", type=int, default=-1)
@@ -28,7 +27,7 @@ if __name__ == "__main__":
     os.makedirs(args.out_dir, exist_ok=True)
 
     scenarios_dir = os.path.join(args.base_dir, "proc_trajectories", args.airport)
-    map_dir = os.path.join(args.base_dir, "maps", args.airport)    
+    map_dir = os.path.join(args.base_dir, "maps", args.airport)
 
     assets = C.load_assets(map_dir=map_dir)
 
@@ -51,7 +50,7 @@ if __name__ == "__main__":
         outdir = os.path.join(args.out_dir, "highest_scores", args.airport)
         os.makedirs(outdir, exist_ok=True)
 
-        with open(scenario,'rb') as f:
+        with open(scenario, 'rb') as f:
             scene = pickle.load(f)
 
         agent_types = np.asarray(scene['agent_types'])
@@ -62,7 +61,7 @@ if __name__ == "__main__":
         # Compute individual metrics and scores
         ind_metrics = compute_individual_metrics(
             sequences=scene['sequences'].copy(), hold_lines=hl_xy.copy())
-        
+
         ind_scores, ind_scene_score = S.compute_individual_scores(
             metrics=ind_metrics, agent_types=agent_types)
 
@@ -73,11 +72,11 @@ if __name__ == "__main__":
         if np.where(int_metrics['status'] == s.OK)[0].shape[0] == 0:
             num_noninteractive += 1
             continue
-        
+
         # Compute individual and interaction scores
         int_metrics['num_agents'] = agent_types.shape[0]
         int_scores, int_scene_score = S.compute_interaction_scores(metrics=int_metrics)
-    
+
         if args.plot:
             # filetag = os.path.join(outdir, f"{subdir}_{scenario_id}_s-{round(int_scene_score, 3)}_int")
             # C.plot_scene_scores(scene, assets, int_scores, int_scene_score, filetag)
@@ -94,7 +93,8 @@ if __name__ == "__main__":
             # os.makedirs(outdir, exist_ok=True)
             # filetag = os.path.join(outdir, f"{subdir}_{scenario_id}")
             # C.plot_scene(scene, assets, filetag)
-    
+
     print(f"Processed scenarios: {num_scenes}")
     print(f"\tNon Aircraft scenarios: {num_nonaircraft} ({round(num_nonaircraft/num_scenes, 3)})")
-    print(f"\tNon Interactive scenarios: {num_noninteractive} ({round(num_noninteractive/num_scenes, 3)})")
+    print(
+        f"\tNon Interactive scenarios: {num_noninteractive} ({round(num_noninteractive/num_scenes, 3)})")

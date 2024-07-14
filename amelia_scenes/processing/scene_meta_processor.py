@@ -2,17 +2,17 @@ import json
 import os
 import pickle
 
-import amelia.scenes.utils.common as C
+import amelia_scenes.utils.common as C
 
 from easydict import EasyDict
 from joblib import Parallel, delayed
 from tqdm import tqdm
 from typing import Tuple, List
 
-from amelia.scenes.scoring.crowdedness import compute_simple_scene_crowdedness
-from amelia.scenes.scoring.kinematic import compute_kinematic_scores
-from amelia.scenes.scoring.interactive import compute_interactive_scores
-from amelia.scenes.scoring.critical import compute_simple_scene_critical
+from amelia_scenes.scoring.crowdedness import compute_simple_scene_crowdedness
+from amelia_scenes.scoring.kinematic import compute_kinematic_scores
+from amelia_scenes.scoring.interactive import compute_interactive_scores
+from amelia_scenes.scoring.critical import compute_simple_scene_critical
 
 
 class SceneMetaProcessor:
