@@ -49,7 +49,7 @@ conda activate amelia
 Once you've installed the tools, and created the amelia enviroment. Run:
 
 ```bash
-cd amelia/scenes
+cd amelia_scenes
 python run_processor.py --airport [airport_icao] --parallel
 ```
 
@@ -61,7 +61,6 @@ Where:
 Additional parameters can also be specified:
 
 ```bash
-cd amelia/scenes
 python run_processor.py --airport [airport_icao] --to_process [scenes | metas | both] --parallel \
                         --base_dir [path_to_dataset] \
                         --traj_version [version]
@@ -79,14 +78,13 @@ Where:
   - `scenes`: only generate scenes from the raw files
   - `metas`: generates meta information from already generated scenes. It uses scene scoring tools.
   - `both`: generates scenes and meta information, simultaneously.
-- `[base_dir]`: Path to the dataset. By defaulult the path is set to `../../datasets/amelia`.
+- `[base_dir]`: Path to the dataset. By defaulult the path is set to `../datasets/amelia`.
 - `[traj_version]`: Version of the trajectory data. By default it is set to `a10v08`.
 - `[graph_version]`: Version of the graph data. By default it is set to `a10v01os`.
 - `[overwrite]`: If the processing should overwrite the existing data. By default it is set to `True`.
 - `[perc_process]`: Top limit vizualization of the data being processed. By default it is set to `1.0`.
 - `[seed]`: Seed for the random number generator. By default it is set to `42`.
 - `[jobs]`: Number of Python worker processes to be used in parallel. By default it is set to `-1`, which will use all available CPUs.
-
 
 #### Expected output
 
@@ -129,11 +127,11 @@ The output scenes will be in:
 
 ### Creating dataset splits
 
-Once the scenes are generated, the `create_splits.py` script can be run to split the dataset. The script can be run as follows:
+Once the scenes are generated, the `run_create_splits.py` script can be run to split the dataset. The script can be run as follows:
 
 ``` bash
-cd amelia/scenes
-python create_splits.py --split_type [random | day | month]
+cd amelia_scenes
+python run_create_splits.py --split_type [random | day | month]
 ```
 
 Where:
@@ -146,15 +144,15 @@ Where:
 Additional parameters can also be specified:
 
 ``` bash
-cd amelia/scenes
-python create_splits.py --split_type [random | day | month] \
+cd amelia_scenes
+python run_create_splits.py --split_type [random | day | month] \
                         --base_dir [path_to_dataset] \
                         --traj_version [version] \
                         --seed [seed] \
                         [--graph_version [version]]
 ```
 
-- `[base_dir]`: Path to the dataset. By defaulult the path is set to `../../datasets/amelia`.
+- `[base_dir]`: Path to the dataset. By defaulult the path is set to `../datasets/amelia`.
 - `[traj_version]`: Version of the trajectory data. By default it is set to `a10v08`.
 - `[seed]`: Seed for the random number generator. By default it is set to `42`.
 

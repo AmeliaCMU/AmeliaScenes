@@ -1,4 +1,4 @@
-import scene_utils.interaction_metrics as M
+import amelia_scenes.utils.interaction_metrics as M
 import scene_utils.scores as S
 import scene_utils.common as C
 from scenes.scene_utils.common import Status as s
@@ -18,7 +18,7 @@ SUBDIR = __file__.split('/')[-1].split('.')[0]
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--base_dir", type=str, default="../../datasets/swim")
+    parser.add_argument("--base_dir", type=str, default="../datasets/swim")
     parser.add_argument("--out_dir", type=str, default="./out")
     parser.add_argument("--airport", type=str, default="ksea",
                         choices=["ksea", "kbos", "kmdw", "kewr"])

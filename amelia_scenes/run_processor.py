@@ -2,7 +2,7 @@ import os
 
 from easydict import EasyDict
 
-from amelia.scenes.utils.common import SUPPORTED_AIRPORTS
+from amelia_scenes.utils.common import SUPPORTED_AIRPORTS
 
 
 def run(
@@ -19,16 +19,16 @@ def run(
 ) -> None:
     traj_data_dir = f"traj_data_{traj_version}"
     if to_process == 'scenes':
-        from amelia.scenes.processing.scene_processor import SceneProcessor as Pr
+        from amelia_scenes.processing.scene_processor import SceneProcessor as Pr
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'raw_trajectories')
         out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes')
     elif to_process == 'metas':
-        from amelia.scenes.processing.scene_meta_processor import SceneMetaProcessor as Pr
+        from amelia_scenes.processing.scene_meta_processor import SceneMetaProcessor as Pr
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes')
         out_data_dir = os.path.join(
             base_dir, traj_data_dir, 'proc_scenes_meta')
     else:
-        from amelia.scenes.processing.full_processor import SceneProcessor as Pr
+        from amelia_scenes.processing.full_processor import SceneProcessor as Pr
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'raw_trajectories')
         out_data_dir = os.path.join(
             base_dir, traj_data_dir, 'proc_full_scenes')
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     parser.add_argument("--airport", type=str,
                         default="kbos", choices=SUPPORTED_AIRPORTS)
     parser.add_argument("--base_dir", type=str,
-                        default="../../datasets/amelia")
+                        default="../datasets/amelia")
     parser.add_argument("--traj_version", type=str, default="a10v08")
     parser.add_argument("--graph_version", type=str, default="a10v01os")
     parser.add_argument("--parallel", action='store_true')
