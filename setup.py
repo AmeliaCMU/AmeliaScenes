@@ -21,5 +21,8 @@ setup(
         'tzdata==2024.1',
         'natsort==8.3.1,<9',
         'imageio==2.34.0,<3',
+        'matplotlib==3.7.1',
+        'scipy==1.9.1',
+        'pyproj==3.6.1'
     ]
 )
