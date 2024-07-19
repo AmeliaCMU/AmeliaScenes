@@ -49,7 +49,7 @@ conda activate amelia
 Once you've installed the tools, and created the amelia enviroment. Run:
 
 ```bash
-cd amelia/scenes
+cd amelia_scenes
 python run_processor.py --airport [airport_icao] --parallel
 ```
 
@@ -61,7 +61,6 @@ Where:
 Additional parameters can also be specified:
 
 ```bash
-cd amelia/scenes
 python run_processor.py --airport [airport_icao] --to_process [scenes | metas | both] --parallel \
                         --base_dir [path_to_dataset] \
                         --traj_version [version]
@@ -86,7 +85,6 @@ Where:
 - `[perc_process]`: Top limit vizualization of the data being processed. By default it is set to `1.0`.
 - `[seed]`: Seed for the random number generator. By default it is set to `42`.
 - `[jobs]`: Number of Python worker processes to be used in parallel. By default it is set to `-1`, which will use all available CPUs.
-
 
 #### Expected output
 
@@ -129,11 +127,11 @@ The output scenes will be in:
 
 ### Creating dataset splits
 
-Once the scenes are generated, the `create_splits.py` script can be run to split the dataset. The script can be run as follows:
+Once the scenes are generated, the `run_create_splits.py` script can be run to split the dataset. The script can be run as follows:
 
 ``` bash
-cd amelia/scenes
-python create_splits.py --split_type [random | day | month]
+cd amelia_scenes
+python run_create_splits.py --split_type [random | day | month]
 ```
 
 Where:
@@ -146,8 +144,8 @@ Where:
 Additional parameters can also be specified:
 
 ``` bash
-cd amelia/scenes
-python create_splits.py --split_type [random | day | month] \
+cd amelia_scenes
+python run_create_splits.py --split_type [random | day | month] \
                         --base_dir [path_to_dataset] \
                         --traj_version [version] \
                         --seed [seed] \

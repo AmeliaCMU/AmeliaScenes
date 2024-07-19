@@ -2,7 +2,7 @@ from gettext import install
 from setuptools import setup, find_packages
 
 setup(
-    name='amelia-scenes',
+    name='amelia_scenes',
     packages=find_packages(['./tools/*'], exclude=['test*']),
     version='1.0',
     description='Tool for creating scenes from CSV data and characterizing scenarios.',

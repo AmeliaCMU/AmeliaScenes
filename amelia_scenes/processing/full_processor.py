@@ -6,13 +6,18 @@ import pandas as pd
 import pickle
 import random
 
-import amelia.scenes.utils.global_masks as G
-import amelia.scenes.utils.common as C
+import amelia_scenes.utils.global_masks as G
+import amelia_scenes.utils.common as C
 
 from easydict import EasyDict
 from joblib import Parallel, delayed
 from tqdm import tqdm
 from typing import Tuple, List
+
+from amelia_scenes.scoring.crowdedness import compute_simple_scene_crowdedness
+from amelia_scenes.scoring.kinematic import compute_kinematic_scores
+from amelia_scenes.scoring.interactive import compute_interactive_scores
+from amelia_scenes.scoring.critical import compute_simple_scene_critical
 
 
 class SceneProcessor:
@@ -54,6 +59,14 @@ class SceneProcessor:
             config.assets_dir, self.airport, 'limits.json')
         with open(limits_file, 'r') as fp:
             self.ref_data = EasyDict(json.load(fp))
+
+        graph_data_dir = os.path.join(config.graph_data_dir, self.airport)
+        print(f"Loading graph data from: {graph_data_dir}")
+        pickle_map_filepath = os.path.join(
+            graph_data_dir, "semantic_graph.pkl")
+        with open(pickle_map_filepath, 'rb') as f:
+            graph_pickle = pickle.load(f)
+            self.hold_lines = graph_pickle['hold_lines']
 
         self.blacklist = []
         blackist_file = os.path.join(self.blacklist_dir, f"{self.airport}.txt")
@@ -151,7 +164,7 @@ class SceneProcessor:
             # Get agent array based on random and safety criteria
             num_agents, _, _ = seq.shape
 
-            scenario = {
+            scene = EasyDict({
                 'scenario_id': scenario_id,
                 'num_agents': num_agents,
                 'airport_id': airport_id,
@@ -160,12 +173,44 @@ class SceneProcessor:
                 'agent_types': agent_type,
                 'agent_masks': agent_mask,
                 'agent_valid': agent_valid,
+            })
+
+            crowd_scene_score = compute_simple_scene_crowdedness(
+                scene, self.max_agents)
+            kin_agents_scores, kin_scene_score = compute_kinematic_scores(
+                scene, self.hold_lines)
+            int_agents_scores, int_scene_score = compute_interactive_scores(
+                scene, self.hold_lines)
+            crit_agent_scores, crit_scene_score = compute_simple_scene_critical(
+                agent_scores_list=[kin_agents_scores, int_agents_scores],
+                scene_score_list=[crowd_scene_score,
+                                  kin_scene_score, int_scene_score]
+            )
+
+            scene['meta'] = {
+                'agent_scores': {
+                    'kinematic': kin_agents_scores,
+                    'interactive': int_agents_scores,
+                    'critical': crit_agent_scores
+                },
+                'agent_order': {
+                    'random': C.get_random_order(scene.num_agents, scene.agent_valid, self.seed),
+                    'kinematic': C.get_sorted_order(kin_agents_scores),
+                    'interactive': C.get_sorted_order(int_agents_scores),
+                    'critical': C.get_sorted_order(crit_agent_scores)
+                },
+                'scene_scores': {
+                    'crowdedness': crowd_scene_score,
+                    'kinematic': kin_scene_score,
+                    'interactive': int_scene_score,
+                    'critical': crit_scene_score
+                },
             }
 
             scenario_filepath = os.path.join(
                 data_dir, f"{scenario_id}_n-{num_agents}.pkl")
             with open(scenario_filepath, 'wb') as f:
-                pickle.dump(scenario, f, protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump(scene, f, protocol=pickle.HIGHEST_PROTOCOL)
 
             valid_seq += 1
             sharded_files.append(scenario_filepath)

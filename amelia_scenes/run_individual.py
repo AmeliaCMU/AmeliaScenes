@@ -17,7 +17,7 @@ SUBDIR = __file__.split('/')[-1].split('.')[0]
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--base_dir", type=str, default="../../datasets/swim")
+    parser.add_argument("--base_dir", type=str, default="../datasets/swim")
     parser.add_argument("--out_dir", type=str, default="./out")
     parser.add_argument("--airport", type=str, default="ksea",
                         choices=["ksea", "kbos", "kmdw", "kewr"])
