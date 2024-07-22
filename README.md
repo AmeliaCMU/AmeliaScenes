@@ -78,7 +78,7 @@ Where:
   - `scenes`: only generate scenes from the raw files
   - `metas`: generates meta information from already generated scenes. It uses scene scoring tools.
   - `both`: generates scenes and meta information, simultaneously.
-- `[base_dir]`: Path to the dataset. By defaulult the path is set to `../../datasets/amelia`.
+- `[base_dir]`: Path to the dataset. By defaulult the path is set to `../datasets/amelia`.
 - `[traj_version]`: Version of the trajectory data. By default it is set to `a10v08`.
 - `[graph_version]`: Version of the graph data. By default it is set to `a10v01os`.
 - `[overwrite]`: If the processing should overwrite the existing data. By default it is set to `True`.
@@ -152,7 +152,7 @@ python run_create_splits.py --split_type [random | day | month] \
                         [--graph_version [version]]
 ```
 
-- `[base_dir]`: Path to the dataset. By defaulult the path is set to `../../datasets/amelia`.
+- `[base_dir]`: Path to the dataset. By defaulult the path is set to `../datasets/amelia`.
 - `[traj_version]`: Version of the trajectory data. By default it is set to `a10v08`.
 - `[seed]`: Seed for the random number generator. By default it is set to `42`.
 
