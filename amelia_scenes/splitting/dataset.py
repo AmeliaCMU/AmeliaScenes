@@ -7,10 +7,12 @@ import os
 import pickle
 import random
 
+
 from datetime import datetime, timezone
 from easydict import EasyDict
 from math import floor
 from natsort import natsorted
+
 from typing import Tuple
 
 from amelia_scenes.utils import common
@@ -128,10 +130,9 @@ def get_airport_files(airport: str, data_prep: dict):
     """
 
     in_data_dir = os.path.join(data_prep.in_data_dir, airport)
-
-    airport_files = [os.path.join(airport, fp)
-                     for fp in os.listdir(in_data_dir)]
+    airport_files = [os.path.join(airport, fp) for fp in os.listdir(in_data_dir)]
     airport_files = natsorted(airport_files)
+
 
     random.seed(data_prep.seed)
     random.shuffle(airport_files)
@@ -197,6 +198,7 @@ def create_day_splits(data_prep: dict, airport_list: list):
         airport_files = np.asarray(get_airport_files(airport, data_prep))
         days_per_file = np.asarray([datetime.fromtimestamp(
             int(f.split('/')[-1].split('.')[0].split('_')[-1]), tz=timezone.utc).day for f in airport_files])
+
         days = np.unique(days_per_file)
         num_days = days.shape[0]
 
@@ -250,6 +252,7 @@ def create_month_splits(data_prep: dict, airport_list: list):
         airport_files = np.asarray(get_airport_files(airport, data_prep))
         month_per_file = np.asarray([datetime.fromtimestamp(
             int(f.split('/')[-1].split('.')[0].split('_')[-1]), tz=timezone.utc).month for f in airport_files])
+
         months = np.unique(month_per_file)
         num_months = months.shape[0]
 
