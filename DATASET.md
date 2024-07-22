@@ -14,6 +14,9 @@ Make sure the dataset is structured as follows:
         |-- assets
             | -- airport_icao
                 | -- bkg_map.png
+                | -- limits.json
+                | -- bkg_map.pgw
+                | -- airport_code_from_net.osm
         |-- graph_data_a10v01os
         |-- traj_data_a10v08
 
