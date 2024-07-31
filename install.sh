@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# conda create --name $1 python=3.9
-# conda activate $1
+conda create --name $1 python=3.9
+conda activate $1
 
 
-mkdir amelia
-cd amelia
+mkdir $1
+cd $1
 
 # array of arguments
 repos=(git@github.com:AmeliaCMU/AmeliaScenes.git git@github.com:AmeliaCMU/AmeliaMaps.git git@github.com:AmeliaCMU/AmeliaTF.git git@github.com:AmeliaCMU/AmeliaInference.git)
