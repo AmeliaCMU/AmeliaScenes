@@ -133,7 +133,6 @@ def get_airport_files(airport: str, data_prep: dict):
     airport_files = [os.path.join(airport, fp) for fp in os.listdir(in_data_dir)]
     airport_files = natsorted(airport_files)
 
-
     random.seed(data_prep.seed)
     random.shuffle(airport_files)
     return airport_files
