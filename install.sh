@@ -8,8 +8,8 @@ mkdir $1
 cd $1
 
 # array of arguments
-repos=(git@github.com:AmeliaCMU/AmeliaScenes.git git@github.com:AmeliaCMU/AmeliaMaps.git git@github.com:AmeliaCMU/AmeliaTF.git git@github.com:AmeliaCMU/AmeliaInference.git)
-amelia_framework=(AmeliaScenes AmeliaMaps AmeliaTF AmeliaInference)
+repos=(git@github.com:AmeliaCMU/AmeliaScenes.git git@github.com:AmeliaCMU/AmeliaMaps.git git@github.com:AmeliaCMU/AmeliaTF.git git@github.com:AmeliaCMU/AmeliaInference.git git@github.com:AmeliaCMU/AmeliaDataTools.git)
+amelia_framework=(AmeliaScenes AmeliaMaps AmeliaTF AmeliaInference AmeliaDataTools)
 
 # loop through the array
 for i in "${!repos[@]}"; do
