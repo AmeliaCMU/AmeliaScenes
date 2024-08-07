@@ -2,7 +2,7 @@ import os
 
 from easydict import EasyDict
 
-from amelia_scenes.utils.common import SUPPORTED_AIRPORTS
+from amelia_scenes.utils.common import SUPPORTED_AIRPORTS, ROOT_DIR
 
 
 def run(
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     parser.add_argument("--airport", type=str,
                         default="kbos", choices=SUPPORTED_AIRPORTS)
     parser.add_argument("--base_dir", type=str,
-                        default="../datasets/amelia")
+                        default=f"{ROOT_DIR}/datasets/amelia")
     parser.add_argument("--traj_version", type=str, default="a10v08")
     parser.add_argument("--graph_version", type=str, default="a10v01os")
     parser.add_argument("--parallel", action='store_true')
