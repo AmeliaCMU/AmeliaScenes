@@ -3,7 +3,7 @@ import os
 from easydict import EasyDict
 
 from amelia_scenes.splitting import dataset
-from amelia_scenes.utils.common import SUPPORTED_AIRPORTS
+from amelia_scenes.utils.common import SUPPORTED_AIRPORTS, ROOT_DIR
 
 
 def run(base_dir: str, traj_version: str, split_type: str, seed: int) -> None:
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--base_dir", type=str,
-                        default="../datasets/amelia")
+                        default=f"{ROOT_DIR}/datasets/amelia")
     parser.add_argument("--traj_version", type=str, default="a10v08")
     parser.add_argument("--split_type", default='random',
                         choices=['random', 'day', 'month'])
