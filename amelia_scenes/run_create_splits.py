@@ -2,7 +2,7 @@ import os
 
 from easydict import EasyDict
 
-from amelia_scenes.splitting import dataset
+from amelia_scenes.utils import dataset
 from amelia_scenes.utils.common import SUPPORTED_AIRPORTS, ROOT_DIR
 
 

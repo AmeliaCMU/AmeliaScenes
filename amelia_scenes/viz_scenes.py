@@ -5,8 +5,8 @@ import random
 from natsort import natsorted
 from tqdm import tqdm
 
-from amelia_scenes.splitting.dataset import load_assets
-from amelia_scenes.utils.common import SUPPORTED_AIRPORTS, ROOT_DIR
+from amelia_scenes.utils.dataset import load_assets
+from amelia_scenes.utils.common import SUPPORTED_AIRPORTS
 from amelia_scenes.visualization import scene_viz as viz
 
 SUBDIR = __file__.split('/')[-1].split('.')[0]
@@ -15,12 +15,12 @@ def run(
     airport: str,
     base_path: str, 
     traj_version: str,
-    graph_version: str,
     out_path: str, 
     num_scenes: int, 
     perc: float, 
     benchmark: bool,
     seed: int,
+    dpi: int
 ):
     assets = load_assets(base_path, airport)
     traj_data_dir = "traj_data_benchmark" if benchmark else f"traj_data_{traj_version}" 
@@ -39,7 +39,7 @@ def run(
         else:
             scene_files = scene_files[:int(len(scene_files) * perc)]
     
-    out_dir = os.path.join(out_path, SUBDIR)
+    out_dir = os.path.join(out_path, SUBDIR, airport)
     os.makedirs(out_dir, exist_ok=True)
 
     for scene_file in tqdm(scene_files):
@@ -49,7 +49,7 @@ def run(
         fsplit = scene_file.split('/')
         scenario_name, scenario_id = fsplit[-2], fsplit[-1].split('.')[0]
         filetag = os.path.join(out_dir, f"{scenario_name}_{scenario_id}.png")
-        viz.plot_scene(scene, assets, filetag)
+        viz.plot_scene(scene, assets, filetag, dpi=dpi)
 
 if __name__ == "__main__":
     import argparse 
@@ -68,10 +68,6 @@ if __name__ == "__main__":
         "--traj_version", 
         type=str, 
         default="a10v08")
-    parser.add_argument(
-        "--graph_version", 
-        type=str, 
-        default="a10v01os")
     parser.add_argument(
         "--out_path", 
         type=str, 
@@ -94,6 +90,11 @@ if __name__ == "__main__":
         "--seed", 
         type=int,
         default=42, 
+        help="Random seed.")
+    parser.add_argument(
+        "--dpi", 
+        type=int,
+        default=400, 
         help="Random seed.")
     args = parser.parse_args()
     run(**vars(args))
