@@ -316,8 +316,7 @@ def plot_scene_marginal_with_hist(
 
                     # Plot motion distribution
                     movement_plot.fill_between(
-                        pred[:, 1], s_n[:, 0], s_p[:,
-                                                   0], lw=mm[1], alpha=score.item() * 0.65,
+                        pred[:, 1], s_n[:, 0], s_p[:, 0], lw=mm[1], alpha=score.item() * 0.65,
                         color=mm[0], interpolate=True)
 
             all_lon.append(lon)
