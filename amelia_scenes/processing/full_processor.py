@@ -70,7 +70,7 @@ class SceneProcessor:
 
         self.blacklist = []
         blackist_file = os.path.join(self.blacklist_dir, f"{self.airport}.txt")
-        if os.path.exists(blackist_file):
+        if os.path.exists(blackist_file) and not self.overwrite:
             with open(blackist_file, 'r') as f:
                 self.blacklist = f.read().splitlines()
 

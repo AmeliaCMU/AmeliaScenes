@@ -47,7 +47,7 @@ def run(
         "hist_len": 10,
         "skip": 1,
         "min_agents": 2,
-        "max_agents": 15,
+        "max_agents": 40,
         "min_valid_points": 2,
         "seed": seed,
         "jobs": jobs
