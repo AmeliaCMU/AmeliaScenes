@@ -12,18 +12,11 @@ import random
 random.seed(42)
 np.set_printoptions(suppress=True)
 
+from amelia_scenes.utils.common import SUPPORTED_AIRPORTS
 
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--airport", type=str, default="ksea",
-                        choices=["ksea", "kbos", "kmdw", "kewr"])
-    parser.add_argument("--base_dir", type=str, default="../datasets/swim")
-    parser.add_argument("--out_dir", type=str, default="./out")
-    parser.add_argument("--plot", action="store_true")
-    parser.add_argument("--num_scenes", type=int, default=-1)
-    args = parser.parse_args()
 
+def run(airport: str, base_dir: str, out_dir: str, plot: bool, num_scenes: int):
+    
     os.makedirs(args.out_dir, exist_ok=True)
 
     scenarios_dir = os.path.join(args.base_dir, "proc_trajectories", args.airport)
@@ -98,3 +91,15 @@ if __name__ == "__main__":
     print(f"\tNon Aircraft scenarios: {num_nonaircraft} ({round(num_nonaircraft/num_scenes, 3)})")
     print(
         f"\tNon Interactive scenarios: {num_noninteractive} ({round(num_noninteractive/num_scenes, 3)})")
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--airport", type=str, default="ksea", choices=[SUPPORTED_AIRPORTS])
+    parser.add_argument("--base_dir", type=str, default="../datasets/swim")
+    parser.add_argument("--out_dir", type=str, default="./out")
+    parser.add_argument("--plot", action="store_true")
+    parser.add_argument("--num_scenes", type=int, default=-1)
+    args = parser.parse_args()
+
+    run(**vars(args))

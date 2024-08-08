@@ -14,7 +14,6 @@ from amelia_scenes.scoring.kinematic import compute_kinematic_scores
 from amelia_scenes.scoring.interactive import compute_interactive_scores
 from amelia_scenes.scoring.critical import compute_simple_scene_critical
 
-
 class SceneMetaProcessor:
     """ Dataset class for pre-processing meta data for airport surface movement scenes. Assumes that
     the data has been pickled already, i.e., need to run run_processor.py in scene mode first.
@@ -49,15 +48,13 @@ class SceneMetaProcessor:
 
         self.n_jobs = config.jobs
 
-        limits_file = os.path.join(
-            config.assets_dir, self.airport, 'limits.json')
+        limits_file = os.path.join(config.assets_dir, self.airport, 'limits.json')
         with open(limits_file, 'r') as fp:
             self.ref_data = EasyDict(json.load(fp))
 
         graph_data_dir = os.path.join(config.graph_data_dir, self.airport)
         print(f"Loading graph data from: {graph_data_dir}")
-        pickle_map_filepath = os.path.join(
-            graph_data_dir, "semantic_graph.pkl")
+        pickle_map_filepath = os.path.join(graph_data_dir, "semantic_graph.pkl")
         with open(pickle_map_filepath, 'rb') as f:
             graph_pickle = pickle.load(f)
             self.hold_lines = graph_pickle['hold_lines']
@@ -66,9 +63,7 @@ class SceneMetaProcessor:
         self.data_files = []
         for _dir in os.listdir(self.in_data_dir):
             data_dir = os.path.join(self.in_data_dir, _dir)
-            self.data_files += [os.path.join(data_dir, f)
-                                for f in os.listdir(data_dir)]
-
+            self.data_files += [os.path.join(data_dir, f) for f in os.listdir(data_dir)]
             out_data_dir = os.path.join(self.out_data_dir, _dir)
             os.makedirs(out_data_dir, exist_ok=True)
         print(f"Processing meta data for airport {self.airport.upper()}.")
@@ -82,8 +77,8 @@ class SceneMetaProcessor:
         """
         # TODO: debug parallel processing
         if self.parallel:
-            Parallel(n_jobs=self.n_jobs)(delayed(self.process_file)(f)
-                                         for f in tqdm(self.data_files))
+            Parallel(n_jobs=self.n_jobs)(
+                delayed(self.process_file)(f) for f in tqdm(self.data_files))
         else:
             for f in tqdm(self.data_files):
                 self.process_file(f)
@@ -102,20 +97,15 @@ class SceneMetaProcessor:
         with open(f, 'rb') as fp:
             scene = EasyDict(pickle.load(fp))
 
-        scene_meta_filepath = os.path.join(
-            self.out_data_dir, base_time_stamp, scenario_id)
+        scene_meta_filepath = os.path.join(self.out_data_dir, base_time_stamp, scenario_id)
         if self.overwrite or not os.path.exists(scene_meta_filepath):
 
-            crowd_scene_score = compute_simple_scene_crowdedness(
-                scene, self.max_agents)
-            kin_agents_scores, kin_scene_score = compute_kinematic_scores(
-                scene, self.hold_lines)
-            int_agents_scores, int_scene_score = compute_interactive_scores(
-                scene, self.hold_lines)
+            crowd_scene_score = compute_simple_scene_crowdedness(scene, self.max_agents)
+            kin_agents_scores, kin_scene_score = compute_kinematic_scores(scene, self.hold_lines)
+            int_agents_scores, int_scene_score = compute_interactive_scores(scene, self.hold_lines)
             crit_agent_scores, crit_scene_score = compute_simple_scene_critical(
                 agent_scores_list=[kin_agents_scores, int_agents_scores],
-                scene_score_list=[crowd_scene_score,
-                                  kin_scene_score, int_scene_score]
+                scene_score_list=[crowd_scene_score, kin_scene_score, int_scene_score]
             )
 
             scene_meta = {

@@ -4,7 +4,6 @@ from easydict import EasyDict
 
 from amelia_scenes.utils.common import SUPPORTED_AIRPORTS, ROOT_DIR
 
-
 def run(
     airport: str,
     base_dir: str,
@@ -12,12 +11,14 @@ def run(
     graph_version: str,
     parallel: bool,
     overwrite: bool,
+    benchmark: bool,
     perc_process: float,
     to_process: str,
     seed: int,
     jobs: int
 ) -> None:
-    traj_data_dir = f"traj_data_{traj_version}"
+    traj_data_dir = f"traj_data_benchmark" if benchmark else f"traj_data_{traj_version}"
+    bench_data_dir = os.path.join(base_dir, traj_data_dir, 'benchmark')
     if to_process == 'scenes':
         from amelia_scenes.processing.scene_processor import SceneProcessor as Pr
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'raw_trajectories')
@@ -25,24 +26,24 @@ def run(
     elif to_process == 'metas':
         from amelia_scenes.processing.scene_meta_processor import SceneMetaProcessor as Pr
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes')
-        out_data_dir = os.path.join(
-            base_dir, traj_data_dir, 'proc_scenes_meta')
+        out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes_meta')
     else:
         from amelia_scenes.processing.full_processor import SceneProcessor as Pr
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'raw_trajectories')
-        out_data_dir = os.path.join(
-            base_dir, traj_data_dir, 'proc_full_scenes')
+        out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_full_scenes')
 
     # TODO: provide configs as YAML files
     config = EasyDict({
         "airport": airport,
         "in_data_dir": in_data_dir,
         "out_data_dir": out_data_dir,
+        "bench_data_dir": bench_data_dir,
         'graph_data_dir': os.path.join(base_dir,  f"graph_data_{graph_version}"),
         "assets_dir": os.path.join(base_dir, 'assets'),
         "parallel": parallel,
         "perc_process": perc_process,
         'overwrite': overwrite,
+        "benchmark": benchmark,
         "pred_lens": [20, 50],
         "hist_len": 10,
         "skip": 1,
@@ -59,19 +60,16 @@ def run(
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--airport", type=str,
-                        default="kbos", choices=SUPPORTED_AIRPORTS)
-    parser.add_argument("--base_dir", type=str,
-                        default=f"{ROOT_DIR}/datasets/amelia")
+    parser.add_argument("--airport", type=str, default="kbos", choices=SUPPORTED_AIRPORTS)
+    parser.add_argument("--base_dir", type=str, default=f"{ROOT_DIR}/datasets/amelia")
     parser.add_argument("--traj_version", type=str, default="a10v08")
     parser.add_argument("--graph_version", type=str, default="a10v01os")
     parser.add_argument("--parallel", action='store_true')
     parser.add_argument("--overwrite", action='store_true')
+    parser.add_argument("--benchmark", action='store_true')
     parser.add_argument("--perc_process", type=float, default=1.0)
-    parser.add_argument("--to_process", default='both',
-                        choices=['scenes', 'metas', 'both'])
+    parser.add_argument("--to_process", default='both', choices=['scenes', 'metas', 'both'])
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--jobs", type=int, default=-1)
     args = parser.parse_args()
-
     run(**vars(args))

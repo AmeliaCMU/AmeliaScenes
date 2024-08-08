@@ -35,8 +35,7 @@ def load_assets(input_dir: str, airport: str) -> Tuple:
     # Map asset
     raster_map_filepath = os.path.join(assets_dir, airport, "bkg_map.png")
     raster_map = cv2.imread(raster_map_filepath)
-    raster_map = cv2.resize(
-        raster_map, (raster_map.shape[0]//2, raster_map.shape[1]//2))
+    raster_map = cv2.resize(raster_map, (raster_map.shape[0]//2, raster_map.shape[1]//2))
     raster_map = cv2.cvtColor(raster_map, cv2.COLOR_BGR2RGB)
 
     # Reference file
@@ -64,8 +63,7 @@ def load_data(airport: str, split: str, version: str = 'a10v08'):
     assert os.path.exists(traj_data_dir), f"Path not found: {traj_data_dir}"
     proc_data_dir = os.path.join(traj_data_dir, "proc_trajectories")
     assert os.path.exists(proc_data_dir), f"Path not found: {proc_data_dir}"
-    data_filepath = os.path.join(
-        traj_data_dir, "splits", f"{split}_splits", f"{airport}_day.txt")
+    data_filepath = os.path.join(traj_data_dir, "splits", f"{split}_splits", f"{airport}_day.txt")
     with open(data_filepath, "r") as f:
         subdirs = f.read().splitlines()
     assert len(subdirs) > 0, f"No files in {proc_data_dir}"
@@ -76,8 +74,7 @@ def load_data(airport: str, split: str, version: str = 'a10v08'):
     # Get list of scenarios to process
     scenarios = []
     for scenario_subdir in scenario_subdirs:
-        scenarios_list = glob.glob(
-            f"{scenario_subdir.removesuffix('.csv')}/*.pkl", recursive=True)
+        scenarios_list = glob.glob(f"{scenario_subdir.removesuffix('.csv')}/*.pkl", recursive=True)
         scenarios += scenarios_list
 
     assets = load_assets(input_dir=input_dir, airport=airport)
@@ -98,8 +95,7 @@ def load_blacklist(data_prep: EasyDict, airport_list: list):
     os.makedirs(blacklist_dir, exist_ok=True)
     blacklist = {}
     for airport in airport_list:
-        blackist_file = os.path.join(
-            blacklist_dir, f"{airport}_{data_prep.split_type}.txt")
+        blackist_file = os.path.join(blacklist_dir, f"{airport}_{data_prep.split_type}.txt")
         blacklist[airport] = []
         if os.path.exists(blackist_file):
             with open(blackist_file, 'r') as f:
@@ -196,7 +192,8 @@ def create_day_splits(data_prep: dict, airport_list: list):
         # collected.
         airport_files = np.asarray(get_airport_files(airport, data_prep))
         days_per_file = np.asarray([datetime.fromtimestamp(
-            int(f.split('/')[-1].split('.')[0].split('_')[-1]), tz=timezone.utc).day for f in airport_files])
+            int(f.split('/')[-1].split('.')[0].split('_')[-1]), 
+            tz=timezone.utc).day for f in airport_files])
 
         days = np.unique(days_per_file)
         num_days = days.shape[0]
@@ -204,10 +201,8 @@ def create_day_splits(data_prep: dict, airport_list: list):
         np.random.seed(data_prep.seed)
 
         # Make sure test set does not contain days "seen" during training.
-        train_val_days = np.random.choice(days, size=int(
-            train_val_perc * num_days), replace=False)
-        test_days = list(set(days.tolist()).symmetric_difference(
-            train_val_days.tolist()))
+        train_val_days = np.random.choice(days, size=int(train_val_perc * num_days), replace=False)
+        test_days = list(set(days.tolist()).symmetric_difference(train_val_days.tolist()))
 
         train_val_idx = np.in1d(days_per_file, train_val_days)
         train_val_files = airport_files[train_val_idx].tolist()
@@ -250,7 +245,8 @@ def create_month_splits(data_prep: dict, airport_list: list):
         # collected.
         airport_files = np.asarray(get_airport_files(airport, data_prep))
         month_per_file = np.asarray([datetime.fromtimestamp(
-            int(f.split('/')[-1].split('.')[0].split('_')[-1]), tz=timezone.utc).month for f in airport_files])
+            int(f.split('/')[-1].split('.')[0].split('_')[-1]), 
+            tz=timezone.utc).month for f in airport_files])
 
         months = np.unique(month_per_file)
         num_months = months.shape[0]
@@ -260,8 +256,7 @@ def create_month_splits(data_prep: dict, airport_list: list):
         # Make sure test set does not contain months "seen" during training.
         train_val_months = np.random.choice(
             months, size=int(train_val_perc * num_months), replace=False)
-        test_months = list(set(months.tolist()).symmetric_difference(
-            train_val_months.tolist()))
+        test_months = list(set(months.tolist()).symmetric_difference(train_val_months.tolist()))
 
         train_val_idx = np.in1d(month_per_file, train_val_months)
         train_val_files = airport_files[train_val_idx].tolist()

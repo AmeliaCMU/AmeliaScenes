@@ -30,6 +30,7 @@ class SceneProcessor:
         # Trajectory configuration
         self.airport = config.airport
         self.in_data_dir = os.path.join(config.in_data_dir, self.airport)
+        self.bench_data_dir = os.path.join(config.bench_data_dir, self.airport)
         self.out_data_dir = os.path.join(config.out_data_dir, self.airport)
         os.makedirs(self.out_data_dir, exist_ok=True)
         self.blacklist_dir = os.path.join(config.out_data_dir, 'blacklist')
@@ -37,6 +38,8 @@ class SceneProcessor:
 
         self.parallel = config.parallel
         self.overwrite = config.overwrite
+        self.benchmark = config.benchmark
+        self.add_padd = self.benchmark
         self.seed = config.seed
 
         self.pred_lens = config.pred_lens
@@ -82,8 +85,8 @@ class SceneProcessor:
 
         # TODO: validate self.parallel works
         if self.parallel:
-            scenes = Parallel(n_jobs=self.n_jobs)(delayed(self.process_file)(f)
-                                                  for f in tqdm(self.data_files))
+            scenes = Parallel(n_jobs=self.n_jobs)(
+                delayed(self.process_file)(f) for f in tqdm(self.data_files))
             # Unpacking results
             for i in range(len(scenes)):
                 res = scenes.pop()
@@ -99,8 +102,7 @@ class SceneProcessor:
                 self.blacklist += res
 
         # Once all of the data has been processed and the blacklists collected, save them.
-        blacklist_file = os.path.join(
-            self.blacklist_dir, f'{self.airport}.txt')
+        blacklist_file = os.path.join(self.blacklist_dir, f'{self.airport}.txt')
         with open(blacklist_file, 'w') as fp:
             fp.write('\n'.join(self.blacklist))
 
@@ -113,8 +115,9 @@ class SceneProcessor:
         ------
             f[str]: name of the file to shard.
         """
-        shard_name = f.split('/')[-1].split('.')[0]
-        airport_id = f.split('/')[-1].split('_')[0].lower()
+        base_name = f.split('/')[-1]
+        shard_name = base_name.split('.')[0]
+        airport_id = base_name.split('_')[0].lower()
         data_dir = os.path.join(self.out_data_dir, shard_name)
 
         # Check if the file has been sharded already. If so, add sharded files to the scenario list.
@@ -126,6 +129,25 @@ class SceneProcessor:
 
         # Get the number of unique frames
         frames = data.Frame.unique().tolist()
+        frame_start, frame_end = 0, frames[-1]
+        benchmark = None
+        if self.benchmark:
+            bench_file = os.path.join(self.bench_data_dir, base_name)
+            bench = pd.read_csv(bench_file)
+            fs, fe = bench.FrameStart.values[0], bench.FrameEnd.values[0]
+            frame_start = max(fs -  2 * self.seq_len, frame_start)
+            frame_end = min(fe + 2 * self.seq_len, frame_end)
+            bench_agents = [int(agent) for agent in bench.AgentIDs.values[0].split(';')]
+            benchmark =  {
+                'frame_start': fs,
+                'frame_start_ext': frame_start,
+                'frame_end': fe,
+                'frame_end_ext': frame_end,
+                'bench_agents': bench_agents,
+                'date': bench.Date
+            }
+        frames = frames[frame_start:frame_end] 
+            
         frame_data = []
         for frame_num in frames:
             frame = data[:][data.Frame == frame_num]
@@ -160,10 +182,10 @@ class SceneProcessor:
                 'agent_types': agent_type,
                 'agent_masks': agent_mask,
                 'agent_valid': agent_valid,
+                'benchmark': benchmark
             }
 
-            scenario_filepath = os.path.join(
-                data_dir, f"{scenario_id}_n-{num_agents}.pkl")
+            scenario_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
             with open(scenario_filepath, 'wb') as f:
                 pickle.dump(scenario, f, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -199,8 +221,7 @@ class SceneProcessor:
         """
         none_outs = (None, None, None, None, None)
         # All data for the current sequence: from the curr index i to i + sequence length
-        seq_data = np.concatenate(
-            frame_data[seq_idx:seq_idx + self.seq_len], axis=0)
+        seq_data = np.concatenate(frame_data[seq_idx:seq_idx + self.seq_len], axis=0)
 
         # IDs of agents in the current sequence
         unique_agents = np.unique(seq_data[:, G.RAW_IDX.ID])
@@ -228,7 +249,7 @@ class SceneProcessor:
             pad_end = frames.index(agent_seq[-1, 0]) - seq_idx + 1
 
             # Exclude trajectories less then seq_len
-            if pad_end - pad_front != self.seq_len:
+            if not self.add_padd and (pad_end - pad_front != self.seq_len):
                 continue
 
             # Scale altitude

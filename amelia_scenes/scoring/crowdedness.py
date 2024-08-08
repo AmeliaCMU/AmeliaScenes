@@ -11,7 +11,6 @@ def compute_simple_scene_crowdedness(scene: EasyDict, max_agents: int):
                         W = [w_i forall i in agent_types]
                         C = mean(W) * sum(W)
     """
-    crowdedness_score = np.asarray(
-        [WEIGHTS[agent_type] for agent_type in scene.agent_types])
+    crowdedness_score = np.asarray([WEIGHTS[agent_type] for agent_type in scene.agent_types])
     norm_constant = max_agents * WEIGHTS[AIRCRAFT]
     return crowdedness_score.sum() / norm_constant
