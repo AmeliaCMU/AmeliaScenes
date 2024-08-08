@@ -51,10 +51,8 @@ def compute_interactive_scores(
     scores = np.zeros(shape=N)
     for n, (i, j) in enumerate(metrics.agent_ids):
         agent_types = metrics.agent_types[n]
-        scores[i] += C.WEIGHTS[agent_types[0]] * \
-            compute_simple_score(n) / norm_constant
-        scores[j] += C.WEIGHTS[agent_types[1]] * \
-            compute_simple_score(n) / norm_constant
+        scores[i] += C.WEIGHTS[agent_types[0]] * compute_simple_score(n) / norm_constant
+        scores[j] += C.WEIGHTS[agent_types[1]] * compute_simple_score(n) / norm_constant
 
     scene_score = scores.max() + scores.mean()
     return scores, scene_score
@@ -99,8 +97,7 @@ def compute_interactive_metrics(
 
     # Compute the distance from each agent's position to each condlict point.
     # Matrix shape is (num_holdlines, num_agents, timesteps).
-    dist_to_conflict_points = C.compute_dists_to_conflict_points(
-        hold_lines, positions)
+    dist_to_conflict_points = C.compute_dists_to_conflict_points(hold_lines, positions)
 
     for n, (i, j) in enumerate(agent_combinations):
         # Assign a default value to each metric.
@@ -132,18 +129,15 @@ def compute_interactive_metrics(
             continue
 
         # Check if agents are near a conflict point by some distance threshold.
-        dist_cp_i, dist_cp_j = dist_to_conflict_points[:,
-                                                       i], dist_to_conflict_points[:, j]
+        dist_cp_i, dist_cp_j = dist_to_conflict_points[:, i], dist_to_conflict_points[:, j]
         in_cp_i = (dist_cp_i < closest_point_dist_thresh).sum(axis=1)
         in_cp_j = (dist_cp_j < closest_point_dist_thresh).sum(axis=1)
 
         heading_i, heading_j = headings[i], headings[j]
 
         # Agents state information
-        agent_i = (pos_i, speed_i, heading_i,
-                   is_stationary_i, in_cp_i, dist_cp_i)
-        agent_j = (pos_j, speed_j, heading_j,
-                   is_stationary_j, in_cp_j, dist_cp_j)
+        agent_i = (pos_i, speed_i, heading_i, is_stationary_i, in_cp_i, dist_cp_i)
+        agent_j = (pos_j, speed_j, heading_j, is_stationary_j, in_cp_j, dist_cp_j)
 
         # ------------------------------------------------------------------------------------------
         # Compute mTTCP for conflict points in the scene. I divided mTTCP into two metrics:
@@ -204,8 +198,7 @@ def compute_collisions(
     seg_j = [LineString(x) for x in seg_j]
 
     coll = np.linalg.norm(pos_i - pos_j, axis=-1) <= collision_threshold
-    coll = (np.array([False] + [x.intersects(y)
-            for x, y in zip(seg_i, seg_j)])) | coll
+    coll = (np.array([False] + [x.intersects(y) for x, y in zip(seg_i, seg_j)])) | coll
     return coll.sum() if return_critical_value else coll
 
 
@@ -335,10 +328,8 @@ def compute_agent_mttcp(
         for n, (i, j) in enumerate(zip(i_idx, j_idx)):
             conflict_point = pos_i[i]  # which should be ~pos_j[j]
             t = min(i, j) + 1
-            ttcp_i = np.linalg.norm(
-                conflict_point - pos_i[:t], axis=-1) / v_i[:t]
-            ttcp_j = np.linalg.norm(
-                conflict_point - pos_j[:t], axis=-1) / v_j[:t]
+            ttcp_i = np.linalg.norm(conflict_point - pos_i[:t], axis=-1) / v_i[:t]
+            ttcp_j = np.linalg.norm(conflict_point - pos_j[:t], axis=-1) / v_j[:t]
             ttcp = np.abs(ttcp_i - ttcp_j)
             agents_mttcp[n] = ttcp.min()
             min_ts[n] = ttcp.argmin()
@@ -355,7 +346,6 @@ def compute_agent_mttcp(
 # --------------------------------------------------------------------------------------------------
 # NOTE: All below is unused for now but DO NOT DELETE.
 # --------------------------------------------------------------------------------------------------
-
 
 def compute_thw(
     agent_i: Tuple,
@@ -594,15 +584,11 @@ def compute_shared_zone_interacion_state(
     drac = np.zeros(shape=(pos_i.shape[0]))
 
     pos_len_i, pos_len_j = np.zeros_like(pos_i), np.zeros_like(pos_j)
-    pos_len_i[:, 0] = pos_i[:, 0] + \
-        separation_len * np.cos(np.deg2rad(heading_i))
-    pos_len_i[:, 1] = pos_i[:, 1] + \
-        separation_len * np.sin(np.deg2rad(heading_i))
+    pos_len_i[:, 0] = pos_i[:, 0] + separation_len * np.cos(np.deg2rad(heading_i))
+    pos_len_i[:, 1] = pos_i[:, 1] + separation_len * np.sin(np.deg2rad(heading_i))
 
-    pos_len_j[:, 0] = pos_j[:, 0] + \
-        separation_len * np.cos(np.deg2rad(heading_j))
-    pos_len_j[:, 1] = pos_j[:, 1] + \
-        separation_len * np.sin(np.deg2rad(heading_j))
+    pos_len_j[:, 0] = pos_j[:, 0] + separation_len * np.cos(np.deg2rad(heading_j))
+    pos_len_j[:, 1] = pos_j[:, 1] + separation_len * np.sin(np.deg2rad(heading_j))
 
     # ...where i is the agent ahead
     i_idx = np.where(leading_agent == 0)[0]

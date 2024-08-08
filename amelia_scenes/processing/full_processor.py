@@ -1,17 +1,12 @@
-import json
 import math
-import numpy as np
 import os
 import pandas as pd
 import pickle
-import random
 
 import amelia_scenes.utils.global_masks as G
 import amelia_scenes.utils.common as C
 
 from easydict import EasyDict
-from joblib import Parallel, delayed
-from tqdm import tqdm
 from typing import Tuple, List
 
 from amelia_scenes.scoring.crowdedness import compute_simple_scene_crowdedness
@@ -91,16 +86,12 @@ class FullProcessor(SceneProcessor):
                 'agent_valid': agent_valid,
             })
 
-            crowd_scene_score = compute_simple_scene_crowdedness(
-                scene, self.max_agents)
-            kin_agents_scores, kin_scene_score = compute_kinematic_scores(
-                scene, self.hold_lines)
-            int_agents_scores, int_scene_score = compute_interactive_scores(
-                scene, self.hold_lines)
+            crowd_scene_score = compute_simple_scene_crowdedness(scene, self.max_agents)
+            kin_agents_scores, kin_scene_score = compute_kinematic_scores(scene, self.hold_lines)
+            int_agents_scores, int_scene_score = compute_interactive_scores(scene, self.hold_lines)
             crit_agent_scores, crit_scene_score = compute_simple_scene_critical(
                 agent_scores_list=[kin_agents_scores, int_agents_scores],
-                scene_score_list=[crowd_scene_score,
-                                  kin_scene_score, int_scene_score]
+                scene_score_list=[crowd_scene_score, kin_scene_score, int_scene_score]
             )
 
             scene['meta'] = {

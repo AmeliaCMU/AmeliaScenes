@@ -17,8 +17,9 @@ from amelia_scenes.utils.common import WEIGHTS
 
 def pack_kinematic_metrics(
     metrics: dict,
-    keys_to_pack: list = ['waiting_period_L', 'waiting_period_C', 'acceleration_rate',
-                          'deceleration_rate', 'speed', 'jerk', 'traj_anomaly'],
+    keys_to_pack: list = [
+        'waiting_period_L', 'waiting_period_C', 'acceleration_rate', 'deceleration_rate', 'speed', 
+        'jerk', 'traj_anomaly'],
     scale: float = 1000.0,
     eps: float = 1e-10
 ):
@@ -52,27 +53,22 @@ def compute_kinematic_scores(
     max_acc: float = 80.0,
     max_score: float = 1000
 ):
-    metrics = compute_kinematic_metrics(
-        scene.agent_sequences, hold_lines[:, 2:4])
+    metrics = compute_kinematic_metrics(scene.agent_sequences, hold_lines[:, 2:4])
     metrics_df = pack_kinematic_metrics(metrics)
     N, M = metrics_df.shape
 
     weights = get_weights(scene.agent_types)
 
     # waiting period score
-    wp_scores = metrics_df.iloc[:, :2].sum(axis=1).clip(
-        lower=0.0, upper=2 * max_wp) / (2 * max_wp)
+    wp_scores = metrics_df.iloc[:, :2].sum(axis=1).clip(lower=0.0, upper=2 * max_wp) / (2 * max_wp)
 
     # acceleration score
-    acc_scores = metrics_df.acceleration_rate.clip(
-        lower=0.0, upper=max_acc) / max_acc
-    dec_scores = metrics_df.deceleration_rate.clip(
-        lower=0.0, upper=max_acc) / max_acc
+    acc_scores = metrics_df.acceleration_rate.clip(lower=0.0, upper=max_acc) / max_acc
+    dec_scores = metrics_df.deceleration_rate.clip(lower=0.0, upper=max_acc) / max_acc
     ac_scores = acc_scores + dec_scores + acc_scores * dec_scores
 
     # speed score
-    speed_scores = metrics_df.speed.clip(
-        lower=0.0, upper=max_speed) / max_speed
+    speed_scores = metrics_df.speed.clip(lower=0.0, upper=max_speed) / max_speed
 
     # jerk score
     jerk_scores = metrics_df.jerk.clip(lower=0.0, upper=max_jerk) / max_jerk
@@ -138,10 +134,8 @@ def compute_waiting_period(
     """ Computes the longest time interval an agent is stationary at a conflict point. """
     # int_L, dist_L: longest interval and corresopnding distance
     # int_C, dist_C: interval with closest distance to a conflict point and corresponding distance
-    wp_int_L, wp_dist_L, wp_idx_L = np.zeros(
-        shape=1), np.inf * np.ones(shape=1), None
-    wp_int_C, wp_dist_C, wp_idx_C = np.zeros(
-        shape=1), np.inf * np.ones(shape=1), None
+    wp_int_L, wp_dist_L, wp_idx_L = np.zeros(shape=1), np.inf * np.ones(shape=1), None
+    wp_int_C, wp_dist_C, wp_idx_C = np.zeros( shape=1), np.inf * np.ones(shape=1), None
 
     dp = np.zeros(shape=sequence.shape[0])
     dp[1:] = np.linalg.norm(sequence[1:] - sequence[:-1], axis=-1)
@@ -155,8 +149,7 @@ def compute_waiting_period(
         se_idxs = [(s, e) for s, e in zip(starts, ends)]
 
         intervals = np.array([end - start for start, end in zip(starts, ends)])
-        dists_cps = np.linalg.norm(
-            conflict_points[:, None] - sequence[starts], axis=-1).min(axis=0)
+        dists_cps = np.linalg.norm(conflict_points[:, None] - sequence[starts], axis=-1).min(axis=0)
 
         idx = intervals.argmax()
         wp_int_L, wp_dist_L, wp_idx_L = intervals[idx], dists_cps[idx], se_idxs[idx]
@@ -181,8 +174,7 @@ def compute_acceleration_profile(
 ) -> Union[Tuple, np.array]:
     def get_acc_sums(acc: np.array, idx: np.array) -> Tuple[np.array, np.array]:
         diff = idx[1:] - idx[:-1]
-        diff = np.array([-1] + np.where(diff > 1)
-                        [0].tolist() + [diff.shape[0]])
+        diff = np.array([-1] + np.where(diff > 1)[0].tolist() + [diff.shape[0]])
         se_idxs = [(idx[s+1], idx[e]+1) for s, e in zip(diff[:-1], diff[1:])]
         sums = np.array([acc[s:e].sum() for s, e in se_idxs])
         return sums, se_idxs

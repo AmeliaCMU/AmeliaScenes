@@ -85,8 +85,8 @@ class SceneProcessor:
 
         # TODO: validate self.parallel works
         if self.parallel:
-            scenes = Parallel(n_jobs=self.n_jobs)(delayed(self.process_file)(f)
-                                                  for f in tqdm(self.data_files))
+            scenes = Parallel(n_jobs=self.n_jobs)(
+                delayed(self.process_file)(f) for f in tqdm(self.data_files))
             # Unpacking results
             for i in range(len(scenes)):
                 res = scenes.pop()
@@ -102,8 +102,7 @@ class SceneProcessor:
                 self.blacklist += res
 
         # Once all of the data has been processed and the blacklists collected, save them.
-        blacklist_file = os.path.join(
-            self.blacklist_dir, f'{self.airport}.txt')
+        blacklist_file = os.path.join(self.blacklist_dir, f'{self.airport}.txt')
         with open(blacklist_file, 'w') as fp:
             fp.write('\n'.join(self.blacklist))
 
@@ -186,8 +185,7 @@ class SceneProcessor:
                 'benchmark': benchmark
             }
 
-            scenario_filepath = os.path.join(
-                data_dir, f"{scenario_id}_n-{num_agents}.pkl")
+            scenario_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
             with open(scenario_filepath, 'wb') as f:
                 pickle.dump(scenario, f, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -223,8 +221,7 @@ class SceneProcessor:
         """
         none_outs = (None, None, None, None, None)
         # All data for the current sequence: from the curr index i to i + sequence length
-        seq_data = np.concatenate(
-            frame_data[seq_idx:seq_idx + self.seq_len], axis=0)
+        seq_data = np.concatenate(frame_data[seq_idx:seq_idx + self.seq_len], axis=0)
 
         # IDs of agents in the current sequence
         unique_agents = np.unique(seq_data[:, G.RAW_IDX.ID])
