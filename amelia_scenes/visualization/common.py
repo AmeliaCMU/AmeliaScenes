@@ -56,6 +56,21 @@ LL_TO_KNOTS = 1000 * 111 * 1.94384
 # -------------------------------------------------------------------------------------------------#
 #                                      COMMON PLOT UTILS                                           #
 # -------------------------------------------------------------------------------------------------#
+def norm(arr, method: str = 'minmax'):
+    assert method in ['minmax', 'meanstd']
+    if np.all(arr == 0.0):
+        return arr
+    
+    if method == 'minmax':
+        if (arr.max() - arr.min()) != 0.0:
+            arr = (arr - arr.min()) / (arr.max() - arr.min())
+        else:
+            arr /= arr.max()
+    else:
+        if arr.std() != 0.0:
+            arr = (arr - arr.min()) / arr.std()
+    return arr
+
 def plot_agent(asset, heading, zoom = 0.015):
     img = ndimage.rotate(asset, heading) 
     img = np.fliplr(img) 

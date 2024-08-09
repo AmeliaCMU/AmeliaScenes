@@ -1,3 +1,4 @@
+import json 
 import math
 import os
 import pandas as pd
@@ -28,6 +29,17 @@ class FullProcessor(SceneProcessor):
         """
         super(FullProcessor, self).__init__(config=config)
 
+        limits_file = os.path.join(config.assets_dir, self.airport, 'limits.json')
+        with open(limits_file, 'r') as fp:
+            self.ref_data = EasyDict(json.load(fp))
+
+        graph_data_dir = os.path.join(config.graph_data_dir, self.airport)
+        print(f"Loading graph data from: {graph_data_dir}")
+        pickle_map_filepath = os.path.join(graph_data_dir, "semantic_graph.pkl")
+        with open(pickle_map_filepath, 'rb') as f:
+            graph_pickle = pickle.load(f)
+            self.hold_lines = graph_pickle['hold_lines']
+
     def process_file(self, f: str) -> Tuple[List, List, List, List, List, List]:
         """ Processes a single data file. It first obtains the number of possible sequences (given
         the parameters in the configuration file) and then generates scene-level pickle files with
@@ -37,8 +49,9 @@ class FullProcessor(SceneProcessor):
         ------
             f[str]: name of the file to shard.
         """
-        shard_name = f.split('/')[-1].split('.')[0]
-        airport_id = f.split('/')[-1].split('_')[0].lower()
+        base_name = f.split('/')[-1]
+        shard_name = base_name.split('.')[0]
+        airport_id = base_name.split('_')[0].lower()
         data_dir = os.path.join(self.out_data_dir, shard_name)
 
         # Check if the file has been sharded already. If so, add sharded files to the scenario list.
@@ -50,13 +63,32 @@ class FullProcessor(SceneProcessor):
 
         # Get the number of unique frames
         frames = data.Frame.unique().tolist()
+        frame_start, frame_end = 0, frames[-1]
+        benchmark = None
+        if self.benchmark:
+            bench_file = os.path.join(self.bench_data_dir, base_name)
+            bench = pd.read_csv(bench_file)
+            fs, fe = bench.FrameStart.values[0], bench.FrameEnd.values[0]
+            frame_start = max(fs -  2 * self.seq_len, frame_start)
+            frame_end = min(fe + 3 * self.seq_len, frame_end)
+            bench_agents = [int(agent) for agent in bench.AgentIDs.values[0].split(';')]
+            benchmark =  {
+                'frame_start': fs,
+                'frame_start_ext': frame_start,
+                'frame_end': fe,
+                'frame_end_ext': frame_end,
+                'bench_agents': bench_agents,
+                'date': bench.Date,
+                'benchmark': benchmark
+            }
+        frames = frames[frame_start:frame_end]
+
         frame_data = []
         for frame_num in frames:
             frame = data[:][data.Frame == frame_num]
             frame_data.append(frame)
 
-        num_sequences = int(
-            math.ceil((len(frames) - (self.seq_len) + 1) / self.skip))
+        num_sequences = int(math.ceil((len(frames) - (self.seq_len) + 1) / self.skip))
         if num_sequences < 1:
             return None
 
@@ -84,6 +116,7 @@ class FullProcessor(SceneProcessor):
                 'agent_types': agent_type,
                 'agent_masks': agent_mask,
                 'agent_valid': agent_valid,
+                'benchmark': benchmark
             })
 
             crowd_scene_score = compute_simple_scene_crowdedness(scene, self.max_agents)

@@ -43,9 +43,9 @@ def compute_interactive_scores(
     )
 
     def compute_simple_score(idx, eps=1e-5):
-        return metrics.collisions[idx] + \
-            min(60, 1.0 / (metrics.agent_mttcp[idx] + eps)) + \
-            min(60, 1.0 / (metrics.scene_mttcp[idx] + eps))
+        return 10 * metrics.collisions[idx] + \
+            min(1 / 0.01, 1.0 / (metrics.agent_mttcp[idx] + eps)) + \
+            min(1 / 0.01, 1.0 / (metrics.scene_mttcp[idx] + eps))
 
     N = scene.num_agents
     scores = np.zeros(shape=N)
@@ -75,7 +75,7 @@ def compute_interactive_metrics(
     # [Arbitrary] 100m distance to a hold-line
     closest_point_dist_thresh: float = 0.1,
     # Separation standards: airservicesaustralia.com
-    separation_dist_thresh: float = 0.300,
+    separation_dist_thresh: float = 0.200,
 ) -> dict:
     positions = sequences[..., G.XY]
     headings = sequences[..., G.SEQ_IDX['Heading']]
