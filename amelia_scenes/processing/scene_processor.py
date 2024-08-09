@@ -135,7 +135,7 @@ class SceneProcessor:
             bench = pd.read_csv(bench_file)
             fs, fe = bench.FrameStart.values[0], bench.FrameEnd.values[0]
             frame_start = max(fs -  2 * self.seq_len, frame_start)
-            frame_end = min(fe + 2 * self.seq_len, frame_end)
+            frame_end = min(fe + 3 * self.seq_len, frame_end)
             bench_agents = [int(agent) for agent in bench.AgentIDs.values[0].split(';')]
             benchmark =  {
                 'frame_start': fs,
@@ -152,8 +152,7 @@ class SceneProcessor:
             frame = data[:][data.Frame == frame_num]
             frame_data.append(frame)
 
-        num_sequences = int(
-            math.ceil((len(frames) - (self.seq_len) + 1) / self.skip))
+        num_sequences = int(math.ceil((len(frames) - (self.seq_len) + 1) / self.skip))
         if num_sequences < 1:
             return None
 

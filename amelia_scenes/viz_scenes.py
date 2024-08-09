@@ -25,7 +25,7 @@ def run(
     assets = load_assets(base_path, airport)
     traj_data_dir = "traj_data_benchmark" if benchmark else f"traj_data_{traj_version}" 
 
-    scenes_dir = os.path.join(base_path, traj_data_dir, 'proc_scenes', airport)
+    scenes_dir = os.path.join(base_path, traj_data_dir, 'proc_full_scenes', airport)
     scenes_subdirs = [os.path.join(scenes_dir, sdir) for sdir in os.listdir(scenes_dir)]
     scene_files = []
     for subdir in scenes_subdirs:

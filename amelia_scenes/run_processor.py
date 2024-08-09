@@ -28,7 +28,7 @@ def run(
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes')
         out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes_meta')
     else:
-        from amelia_scenes.processing.full_processor import SceneProcessor as Pr
+        from amelia_scenes.processing.full_processor import FullProcessor as Pr
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'raw_trajectories')
         out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_full_scenes')
 
