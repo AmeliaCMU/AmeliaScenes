@@ -72,21 +72,4 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--jobs", type=int, default=-1)
     args = parser.parse_args()
-
-    # run(**vars(args))
-
-    airports = ['panc', 'kbos', 'kdca', 'kewr', 'kjfk', 'klax', 'kmdw', 'kmsy', 'ksea', 'ksfo']
-    # rodin1
-    airports = ['ksfo']
-    # rodin2
-    airports = ['kmsy', 'ksea', 'ksfo']
-    # rodin3
-    airports = ['kjfk', 'klax', 'kmdw', 'kmsy', 'ksea', 'ksfo']
-
-    for airport in airports:
-        args.airport = airport
-        args.overwrite = True
-        args.parallel = True
-        args.to_process = 'both'
-        # args.jobs = 8
-        run(**vars(args))
+    run(**vars(args))

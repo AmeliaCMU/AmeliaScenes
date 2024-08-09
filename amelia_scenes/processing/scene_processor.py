@@ -71,8 +71,7 @@ class SceneProcessor:
                            for f in file_list]
         random.seed(self.seed)
         random.shuffle(self.data_files)
-        self.data_files = self.data_files[:int(
-            len(self.data_files) * config.perc_process)]
+        self.data_files = self.data_files[:int(len(self.data_files) * config.perc_process)]
 
     def process_data(self) -> None:
         """ Processes the CSV data files containing airport trajectory information, creating shards
@@ -146,8 +145,8 @@ class SceneProcessor:
                 'bench_agents': bench_agents,
                 'date': bench.Date
             }
-        frames = frames[frame_start:frame_end] 
-            
+        frames = frames[frame_start:frame_end]
+
         frame_data = []
         for frame_num in frames:
             frame = data[:][data.Frame == frame_num]
