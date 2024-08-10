@@ -91,7 +91,6 @@ class FullProcessor(SceneProcessor):
 
         blacklist = []
         num_sequences = int(math.ceil((len(frames) - (self.seq_len) + 1) / self.skip))
-        breakpoint()
         if num_sequences < 1:
             blacklist.append(f.removeprefix(self.in_data_dir+'/'))
             return blacklist
