@@ -1,4 +1,4 @@
-import json 
+import json
 import math
 import os
 import pandas as pd
@@ -16,6 +16,7 @@ from amelia_scenes.scoring.interactive import compute_interactive_scores
 from amelia_scenes.scoring.critical import compute_simple_scene_critical
 
 from amelia_scenes.processing.scene_processor import SceneProcessor
+
 
 class FullProcessor(SceneProcessor):
     """ Dataset class for pre-processing airport surface movement data into scenes. """
@@ -69,10 +70,10 @@ class FullProcessor(SceneProcessor):
             bench_file = os.path.join(self.bench_data_dir, base_name)
             bench = pd.read_csv(bench_file)
             fs, fe = bench.FrameStart.values[0], bench.FrameEnd.values[0]
-            frame_start = max(fs -  2 * self.seq_len, frame_start)
+            frame_start = max(fs - 2 * self.seq_len, frame_start)
             frame_end = min(fe + 3 * self.seq_len, frame_end)
             bench_agents = [int(agent) for agent in bench.AgentIDs.values[0].split(';')]
-            benchmark =  {
+            benchmark = {
                 'frame_start': fs,
                 'frame_start_ext': frame_start,
                 'frame_end': fe,
@@ -88,12 +89,13 @@ class FullProcessor(SceneProcessor):
             frame = data[:][data.Frame == frame_num]
             frame_data.append(frame)
 
+        blacklist = []
         num_sequences = int(math.ceil((len(frames) - (self.seq_len) + 1) / self.skip))
         if num_sequences < 1:
-            return None
+            blacklist.append(f.removeprefix(self.in_data_dir+'/'))
+            return blacklist
 
         sharded_files = []
-        blacklist = []
         os.makedirs(data_dir, exist_ok=True)
 
         valid_seq = 0
