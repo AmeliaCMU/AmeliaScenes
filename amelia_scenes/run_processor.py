@@ -73,4 +73,9 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--jobs", type=int, default=-1)
     args = parser.parse_args()
-    run(**vars(args))
+    # run(**vars(args))
+    for airport in SUPPORTED_AIRPORTS:
+        args.airport = airport
+        args.parallel = True
+        args.overwrite = True
+        run(**vars(args))
