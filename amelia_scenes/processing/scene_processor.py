@@ -67,8 +67,7 @@ class SceneProcessor:
         file_list = os.listdir(self.in_data_dir)
         for duplicate in list(set(self.blacklist) & set(file_list)):
             file_list.remove(duplicate)
-        self.data_files = [os.path.join(self.in_data_dir, f)
-                           for f in file_list]
+        self.data_files = [os.path.join(self.in_data_dir, f) for f in file_list if f.endswith('.csv')]
         random.seed(self.seed)
         random.shuffle(self.data_files)
         self.data_files = self.data_files[:int(
@@ -135,10 +134,10 @@ class SceneProcessor:
             bench_file = os.path.join(self.bench_data_dir, base_name)
             bench = pd.read_csv(bench_file)
             fs, fe = bench.FrameStart.values[0], bench.FrameEnd.values[0]
-            frame_start = max(fs -  2 * self.seq_len, frame_start)
+            frame_start = max(fs - 2 * self.seq_len, frame_start)
             frame_end = min(fe + 3 * self.seq_len, frame_end)
             bench_agents = [int(agent) for agent in bench.AgentIDs.values[0].split(';')]
-            benchmark =  {
+            benchmark = {
                 'frame_start': fs,
                 'frame_start_ext': frame_start,
                 'frame_end': fe,
@@ -146,19 +145,20 @@ class SceneProcessor:
                 'bench_agents': bench_agents,
                 'date': bench.Date
             }
-        frames = frames[frame_start:frame_end] 
-            
+        frames = frames[frame_start:frame_end]
+
         frame_data = []
         for frame_num in frames:
             frame = data[:][data.Frame == frame_num]
             frame_data.append(frame)
 
+        blacklist = []
         num_sequences = int(math.ceil((len(frames) - (self.seq_len) + 1) / self.skip))
         if num_sequences < 1:
-            return None
+            blacklist.append(f.removeprefix(self.in_data_dir+'/'))
+            return blacklist
 
         sharded_files = []
-        blacklist = []
         os.makedirs(data_dir, exist_ok=True)
 
         valid_seq = 0
