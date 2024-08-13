@@ -1,4 +1,4 @@
-
+import itertools
 import numpy as np
 import pandas as pd
 
@@ -29,7 +29,7 @@ def pack_kinematic_metrics(
             continue
         if 'waiting_period' in k:
             T = np.asarray([t for t, d, i in v])
-            D = np.asarray([d + eps for t, d, i in v]) * scale
+            D = np.asarray([d + eps for t, d, i in v]) #* scale
             m[k] = np.divide(T, D)
         elif 'celeration' in k:
             m[k] = np.asarray([a for a, i in v])
@@ -47,11 +47,11 @@ def get_weights(
 def compute_kinematic_scores(
     scene: EasyDict,
     hold_lines: np.array,
-    max_wp: float = 60.0,
+    max_wp: float = 500.0,
     max_speed: float = 100.0,
     max_jerk: float = 10.0,
     max_acc: float = 80.0,
-    max_score: float = 1000
+    max_score: float = 100
 ):
     metrics = compute_kinematic_metrics(scene.agent_sequences, hold_lines[:, 2:4])
     metrics_df = pack_kinematic_metrics(metrics)
@@ -60,23 +60,43 @@ def compute_kinematic_scores(
     weights = get_weights(scene.agent_types)
 
     # waiting period score
-    wp_scores = metrics_df.iloc[:, :2].sum(axis=1).clip(lower=0.0, upper=2 * max_wp) / (2 * max_wp)
+    # wp_scores = metrics_df.iloc[:, :2].sum(axis=1).clip(lower=0.0, upper=2 * max_wp) / (2 * max_wp)
+    wp_scores = metrics_df.waiting_period_L + metrics_df.waiting_period_C
+    wp_scores = wp_scores.clip(lower=0.0, upper=max_wp) / max_wp
+
+    # jerk score
+    jerk_scores = metrics_df.jerk.clip(lower=0.0, upper=max_jerk) / max_jerk
 
     # acceleration score
     acc_scores = metrics_df.acceleration_rate.clip(lower=0.0, upper=max_acc) / max_acc
     dec_scores = metrics_df.deceleration_rate.clip(lower=0.0, upper=max_acc) / max_acc
     ac_scores = acc_scores + dec_scores + acc_scores * dec_scores
-
+    
     # speed score
     speed_scores = metrics_df.speed.clip(lower=0.0, upper=max_speed) / max_speed
 
-    # jerk score
-    jerk_scores = metrics_df.jerk.clip(lower=0.0, upper=max_jerk) / max_jerk
-
     # overall score
     scores = (wp_scores + ac_scores + speed_scores + jerk_scores).to_numpy()
-    for n, m in zip(range(N), range(N)):
-        scores[n] += ac_scores[n] * wp_scores[m]
+    agent_combinations = list(itertools.combinations(range(N), 2))
+    for n, m in agent_combinations:
+        # scores[n] += (ac_scores[n] * wp_scores[m]) - (wp_scores[n] * wp_scores[m])
+        wp_nm = wp_scores[n] * wp_scores[m]
+        wp_np = wp_scores[m] / (0.001 + speed_scores[n])
+        # reward = ac_scores[n] * wp_scores[m] + ac_scores[m] * wp_scores[n]
+        # scores[n] += (reward - penalty)
+        # scores[m] += (reward - penalty)
+        scores[n] += (
+            ac_scores[n] * wp_scores[m] + 
+            wp_scores[n] * ac_scores[m] - 
+            wp_nm - (wp_scores[m] / (0.001 + speed_scores[n]))
+        )
+
+        scores[m] += (
+            ac_scores[m] * wp_scores[n] + 
+            wp_scores[m] * ac_scores[n] - 
+            wp_nm - (wp_scores[n] / (0.001 + speed_scores[m]))
+        )
+    scores = scores + scores.min()
     scores *= weights
     scores = np.clip(scores, a_min=0.0, a_max=max_score)
 
@@ -108,16 +128,16 @@ def compute_kinematic_metrics(sequences: np.array, hold_lines: np.array) -> dict
         speed_max, speed = compute_speed(speed)
         metrics['speed'].append(speed_max)
 
-        wp_L, wp_C = compute_waiting_period(pos, hold_lines)
-        metrics['waiting_period_L'].append(wp_L)
-        metrics['waiting_period_C'].append(wp_C)
-
         ar, dr, acc = compute_acceleration_profile(speed)
         metrics['acceleration_rate'].append(ar)
         metrics['deceleration_rate'].append(dr)
-
+        
         jerk_max, jerk = compute_jerk(acc)
         metrics['jerk'].append(jerk_max)
+
+        wp_L, wp_C = compute_waiting_period(pos, hold_lines)
+        metrics['waiting_period_L'].append(wp_L)
+        metrics['waiting_period_C'].append(wp_C)
 
     return metrics
 

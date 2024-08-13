@@ -189,6 +189,7 @@ def plot_scene_scores(
             axs[i+1].add_artist(ab)
             axs[i+1].scatter(
                 gt_traj_ll[:, 1], gt_traj_ll[:, 0], color=score, s = C.MOTION_COLORS['gt_hist'][1])
+            axs[i+1].text(lon, lat, s=round(score_values[n], 2), color='black', fontsize='x-small')
             
     # Set figure bbox around the predicted trajectory
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0) 

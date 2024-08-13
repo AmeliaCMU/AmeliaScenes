@@ -1,5 +1,13 @@
 # AmeliaScenes
 
+This repository contains the code used in this paper to generate scenes for trajectory forecasting.
+
+#### Amelia: A Large Dataset and Model for Airport Surface Movement Forecasting [[paper](https://arxiv.org/pdf/2407.21185)]
+
+[Ingrid Navarro](https://navars.xyz) *, [Pablo Ortega-Kral](https://paok-2001.github.io) *, [Jay Patrikar](https://www.jaypatrikar.me) *, Haichuan Wang,
+Zelin Ye, Jong Hoon Park, [Jean Oh](https://cmubig.github.io/team/jean_oh/) and [Sebastian Scherer](https://theairlab.org/team/sebastian/)
+
+
 ## Overview
 
 **AmeliaScenes** is a tool for generating airport surface movement scenes from raw trajectory data collected with [AmeliaSWIM](https://github.com/AmeliaCMU/AmeliaSWIM). It takes CSV files containing various fields representing agent trajectory data and produces scenes based on certain specifications, including number of desired agents and scene length.
@@ -22,7 +30,7 @@ Finally, **AmeliaScenes** also provides a dataset splitting script with various 
 
 ### Dataset
 
-To run this repository, you first need to download the amelia dataset. Follow the instructions [here](https://github.com/AmeliaCMU/AmeliaScenes/blob/main/DATASET.md) to download and setup the dataset.
+To run this repository, you first need to download the amelia dataset. Follow the instructions [here](https://ameliacmu.github.io/amelia-dataset/) to download the dataset.
 
 Once downloaded, create a symbolic link into  ```datasets```:
 
@@ -33,7 +41,16 @@ ln -s /path/to/amelia .
 
 ### Installation
 
-To setup the Amelia framework, follow the instructions [here](https://github.com/AmeliaCMU/AmeliaScenes/blob/main/INSTALL.md).
+Make sure that you have [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) installed. 
+
+**Recommended:** Use the  `install.sh` to download and install the Amelia Framework:
+
+```bash
+chmod +x install.sh
+./install.sh amelia
+```
+
+Alternatively, refer to `INSTALL.md` for manual installation.
 
 ## How to use
 
@@ -45,14 +62,13 @@ conda activate amelia
 
 ### Generating scenes from raw data
 
-Once you've installed the tools, and created the amelia environment. Run:
+Once you've installed the tools, and created the amelia environment, run:
 
 ```bash
 cd amelia_scenes
 python run_processor.py --airport [airport_icao] --parallel
 ```
-
-Where:
+where:
 
 - `[airport_icao]`: [ICAO](https://en.wikipedia.org/wiki/ICAO_airport_code) code of the airport to be processed. It can be one of the following: `kbos`, `kdca`, `kewr`, `kjfk`, `klax`, `kmdw`, `kmsy`, `ksea`, `ksfo`, `panc`. By default it is set to `kbos`.
 - `[parallel]`: If the processing should be done in parallel. By default it is set to `True`.
@@ -70,8 +86,7 @@ python run_processor.py --airport [airport_icao] --to_process [scenes | metas | 
                         --seed [seed] \
                         --jobs [jobs]
 ```
-
-Where:
+where:
 
 - `[to_process]`: What to process. By default is set to `both`. Possible options are:
   - `scenes`: only generate scenes from the raw files

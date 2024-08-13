@@ -44,8 +44,8 @@ def compute_interactive_scores(
 
     def compute_simple_score(idx, eps=1e-5):
         return 10 * metrics.collisions[idx] + \
-            min(1 / 0.01, 1.0 / (metrics.agent_mttcp[idx] + eps)) + \
-            min(1 / 0.01, 1.0 / (metrics.scene_mttcp[idx] + eps))
+            min(1 / 60, 1.0 / (metrics.agent_mttcp[idx] + eps)) + \
+            min(1 / 60, 1.0 / (metrics.scene_mttcp[idx] + eps))
 
     N = scene.num_agents
     scores = np.zeros(shape=N)
@@ -73,9 +73,9 @@ def compute_interactive_metrics(
     # Airport-specific: airplanning.com/post/airport-runways
     agent_to_agent_dist_thresh: float = 1.0,
     # [Arbitrary] 100m distance to a hold-line
-    closest_point_dist_thresh: float = 0.1,
+    closest_point_dist_thresh: float = 0.05,
     # Separation standards: airservicesaustralia.com
-    separation_dist_thresh: float = 0.200,
+    separation_dist_thresh: float = 0.300,
 ) -> dict:
     positions = sequences[..., G.XY]
     headings = sequences[..., G.SEQ_IDX['Heading']]
