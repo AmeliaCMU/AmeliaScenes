@@ -22,7 +22,7 @@ Finally, AmeliaScenes also provides a dataset splitting script with various ```t
 
 ### Dataset
 
-To run this repository, you first need to download the amelia dataset. Follow the instructions [here](https://github.com/AmeliaCMU/AmeliaScenes/DATASET.md) to download and setup the dataset.
+To run this repository, you first need to download the amelia dataset. Follow the instructions [here](https://github.com/AmeliaCMU/AmeliaScenes/blob/main/DATASET.md) to download and setup the dataset.
 
 Once downloaded, create a symbolic link into  ```datasets```:
 
