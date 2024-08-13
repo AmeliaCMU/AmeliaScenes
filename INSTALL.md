@@ -27,7 +27,7 @@ pip install -e .
 
 ## Installing the Amelia Framework
 
-Download the `install.sh` script from the repository and run it:
+Make sure that you have [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) installed and download the `install.sh` script from the repository and run:
 
 ```bash
 chmod +x install.sh

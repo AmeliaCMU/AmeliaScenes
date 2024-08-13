@@ -1,6 +1,6 @@
 #!/bin/bash
-
-conda create --name $1 python=3.9
+source ~/miniconda3/etc/profile.d/conda.sh
+conda create --name $1 python=3.9 -y
 conda activate $1
 
 
