@@ -14,6 +14,7 @@ from joblib import Parallel, delayed
 from tqdm import tqdm
 from typing import Tuple, List
 
+from amelia_scenes.scoring.interactive import compute_collision_masks
 
 class SceneProcessor:
     """ Dataset class for pre-processing airport surface movement data into scenes. """
@@ -114,6 +115,9 @@ class SceneProcessor:
         ------
             f[str]: name of the file to shard.
         """
+        if self.benchmark:
+            return self.process_file_bench(f)
+        
         base_name = f.split('/')[-1]
         shard_name = base_name.split('.')[0]
         airport_id = base_name.split('_')[0].lower()
@@ -128,25 +132,6 @@ class SceneProcessor:
 
         # Get the number of unique frames
         frames = data.Frame.unique().tolist()
-        frame_start, frame_end = 0, frames[-1]
-        benchmark = None
-        if self.benchmark:
-            bench_file = os.path.join(self.bench_data_dir, base_name)
-            bench = pd.read_csv(bench_file)
-            fs, fe = bench.FrameStart.values[0], bench.FrameEnd.values[0]
-            frame_start = max(fs - 2 * self.seq_len, frame_start)
-            frame_end = min(fe + 3 * self.seq_len, frame_end)
-            bench_agents = [int(agent) for agent in bench.AgentIDs.values[0].split(';')]
-            benchmark = {
-                'frame_start': fs,
-                'frame_start_ext': frame_start,
-                'frame_end': fe,
-                'frame_end_ext': frame_end,
-                'bench_agents': bench_agents,
-                'date': bench.Date
-            }
-        frames = frames[frame_start:frame_end]
-
         frame_data = []
         for frame_num in frames:
             frame = data[:][data.Frame == frame_num]
@@ -171,6 +156,102 @@ class SceneProcessor:
 
             # Get agent array based on random and safety criteria
             num_agents, _, _ = seq.shape
+            scenario = {
+                'scenario_id': scenario_id,
+                'num_agents': num_agents,
+                'airport_id': airport_id,
+                'agent_sequences': seq,
+                'agent_ids': agent_id,
+                'agent_types': agent_type,
+                'agent_masks': agent_mask,
+                'agent_valid': agent_valid,
+            }
+
+            scenario_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
+            with open(scenario_filepath, 'wb') as f:
+                pickle.dump(scenario, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+            valid_seq += 1
+            sharded_files.append(scenario_filepath)
+
+        # If directory is empty, remove it.
+        if len(os.listdir(data_dir)) == 0:
+            blacklist.append(f.removeprefix(self.in_data_dir+'/'))
+            os.rmdir(data_dir)
+        return blacklist
+    
+    def process_file_bench(self, f: str) -> Tuple[List, List, List, List, List, List]:
+        """ Processes a single data file. It first obtains the number of possible sequences (given
+        the parameters in the configuration file) and then generates scene-level pickle files with
+        the corresponding scene's information.
+
+        Inputs
+        ------
+            f[str]: name of the file to shard.
+        """
+        base_name = f.split('/')[-1]
+        shard_name = base_name.split('.')[0]
+        airport_id = base_name.split('_')[0].lower()
+        data_dir = os.path.join(self.out_data_dir, shard_name)
+
+        # Check if the file has been sharded already. If so, add sharded files to the scenario list.
+        if not self.overwrite and (os.path.exists(data_dir) and len(os.listdir(data_dir)) > 0):
+            return None
+
+        # Otherwise, shard the file and add it to the scenario list.
+        data = pd.read_csv(f)
+
+        # Get the number of unique frames
+        bench_file = os.path.join(self.bench_data_dir, base_name)
+        bench = pd.read_csv(bench_file)
+
+        frames = data.Frame.unique().tolist()
+        fs, fe = bench.FrameStart.values[0], bench.FrameEnd.values[0]
+        frame_start = max(fs - 2 * self.seq_len, frames[0])
+        frame_end = min(fe + 3 * self.seq_len, frames[-1])
+        bench_agents = [int(agent) for agent in bench.AgentIDs.values[0].split(';')]
+        benchmark = {
+            'frame_start': fs,
+            'frame_start_ext': frame_start,
+            'frame_end': fe,
+            'frame_end_ext': frame_end,
+            'bench_agents': bench_agents,
+            'date': bench.Date
+        }
+        frames = frames[frame_start:frame_end]
+        frame_data = []
+        for frame_num in frames:
+            frame = data[:][data.Frame == frame_num]
+            frame_data.append(frame)
+
+        blacklist = []
+        num_sequences = int(math.ceil((len(frames) - (self.seq_len) + 1) / self.skip))
+        if num_sequences < 1:
+            blacklist.append(f.removeprefix(self.in_data_dir+'/'))
+            return blacklist
+
+        sharded_files = []
+        os.makedirs(data_dir, exist_ok=True)
+
+        valid_seq = 0
+        for i in range(0, num_sequences * self.skip + 1, self.skip):
+            scenario_id = str(valid_seq).zfill(6)
+            seq, agent_id, agent_type, agent_valid, agent_mask = self.process_seq(
+                frame_data=frame_data, frames=frames, seq_idx=i, airport_id=airport_id)
+            if seq is None:
+                continue
+
+            # Get agent array based on random and safety criteria
+            num_agents, _, _ = seq.shape
+
+            # NOTE: 
+            #              -inf --> invalid data points (interp, padding)
+            #              inf  --> invalid data points (not in conflict)
+            #   any other value --> collision / time-to-conflict-point
+            coll_masks = compute_collision_masks(seq, agent_type, agent_mask)
+            benchmark['collision_mask'] = coll_masks['collisions']
+            benchmark['mttcp_mask'] = coll_masks['mttcp']
+            benchmark['timestep'] = fe - i
 
             scenario = {
                 'scenario_id': scenario_id,

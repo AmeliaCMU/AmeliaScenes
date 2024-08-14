@@ -60,8 +60,6 @@ def compute_interactive_scores(
 # --------------------------------------------------------------------------------------------------
 # Interaction metric wrapper
 # --------------------------------------------------------------------------------------------------
-
-
 def compute_interactive_metrics(
     sequences: np.array,
     agent_types: np.array,
@@ -175,6 +173,94 @@ def compute_interactive_metrics(
 
     return EasyDict(metrics)
 
+def compute_collision_masks(
+    sequences: np.array,
+    agent_types: np.array,
+    agent_mask: np.array,
+    # Speed (Km/H) to consider an agent as stationary
+    stationary_speed_thresh: float = 1.0,
+    # Airport-specific: airplanning.com/post/airport-runways
+    agent_to_agent_dist_thresh: float = 1.0,
+    # Separation standards: airservicesaustralia.com
+    separation_dist_thresh: float = 0.300,
+) -> dict:
+    positions = sequences[..., G.XY]
+    headings = sequences[..., G.SEQ_IDX['Heading']]
+    speeds = sequences[..., G.SEQ_IDX['Speed']]
+
+    N, T, D = positions.shape
+
+    agent_combinations = list(itertools.combinations(range(N), 2))
+    status_init = np.asarray([Status.UNKNOWN for _ in agent_combinations])
+    
+    metrics = {
+        'status': status_init.copy(),
+        'collisions': -np.inf * np.ones(shape=(N, N, T)),
+        'mttcp': -np.inf * np.ones(shape=(N, N, T))
+    }
+
+    for n, (i, j) in enumerate(agent_combinations):
+        # Get the valid timesteps for an agent pair. Currently, invalid timesteps include: 
+        # interpolated points and padded points
+
+        #TODO: handle masks 
+        mask_i, mask_j = agent_mask[i], agent_mask[j]
+        mask = mask_i & mask_j
+
+        speed_i = speeds[i] * C.KNOTS_TO_KPH
+        speed_j = speeds[j] * C.KNOTS_TO_KPH
+
+        # If agents are stationary, assume no interaction is happening so, skip.
+        is_stationary_i = speed_i.mean() <= stationary_speed_thresh
+        is_stationary_j = speed_j.mean() <= stationary_speed_thresh
+        if is_stationary_i and is_stationary_j:
+            metrics['status'][n] = Status.NOT_OK_STATIONARY
+            continue
+
+        speed_i /= C.HOUR_TO_SECOND  # km/s
+        speed_j /= C.HOUR_TO_SECOND
+
+        # If agent are not within a distance threshold from each other, skip. In this case, the
+        # distance threshold is the maximum runway extent.
+        # NOTE: I'm not sure if we should remove this constraint.
+        pos_i, pos_j = positions[i], positions[j]
+        D_ij = np.linalg.norm(pos_i - pos_j, axis=1)
+        if not np.any(D_ij < agent_to_agent_dist_thresh):
+            metrics['status'][n] = Status.NOT_OK_DISTANCE
+            continue
+
+        # Check if agents are near a conflict point by some distance threshold.
+        in_cp_i, in_cp_j, dist_cp_i, dist_cp_j = None, None, None, None
+        heading_i, heading_j = headings[i], headings[j]
+
+        # Agents state information
+        agent_i = (pos_i, speed_i, heading_i, is_stationary_i, in_cp_i, dist_cp_i)
+        agent_j = (pos_j, speed_j, heading_j, is_stationary_j, in_cp_j, dist_cp_j)
+
+        # ------------------------------------------------------------------------------------------
+        # Compute mTTCP for conflict points in the scene. I divided mTTCP into two metrics:
+        #     * Agent mTTCP: Also considers if given two agent trajectories pass through the same
+        #                    point. Once identified, I calculate the mTTCP from t=0 to t=first time
+        #                    one of the agents cross that conflict point. For reference:
+        #                    ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9827305
+        #
+        #     * Collisions: Computes the loss of separation between two agents. Using 0.300m as
+        #                   loss of separation which is used for vertical separation. Reference:
+        #                   airservicesaustralia.com/about-us/our-services/
+        #                       how-air-traffic-control-works/separation-standards/
+        # ------------------------------------------------------------------------------------------
+        coll = compute_collisions(
+            agent_i=agent_i, agent_j=agent_j, collision_threshold=separation_dist_thresh)
+        metrics['collisions'][i, j, mask] = coll[mask]
+
+        mttcp, mints, idx = compute_mttcp(
+            agent_i=agent_i, agent_j=agent_j, dist_threshold=separation_dist_thresh)
+        if not mints is None:
+            metrics['mttcp'][i, j, mask] = mttcp[mask]
+
+        metrics['status'][n] = Status.OK
+    return EasyDict(metrics)
+
 # --------------------------------------------------------------------------------------------------
 # Specific metrics
 # --------------------------------------------------------------------------------------------------
@@ -199,7 +285,7 @@ def compute_collisions(
 
     coll = np.linalg.norm(pos_i - pos_j, axis=-1) <= collision_threshold
     coll = (np.array([False] + [x.intersects(y) for x, y in zip(seg_i, seg_j)])) | coll
-    return coll.sum() if return_critical_value else coll
+    return coll.sum() if return_critical_value else coll.astype(float)
 
 
 def compute_scene_mttcp(
@@ -224,8 +310,7 @@ def compute_scene_mttcp(
     if (len(in_cp_i) == 0 and len(in_cp_j) == 0) or (is_stationary_i and is_stationary_j):
         return mttcp, min_t, shared_cps
 
-    idx_in_cp_i, idx_in_cp_j = np.where(
-        in_cp_i > 0)[0], np.where(in_cp_j > 0)[0]
+    idx_in_cp_i, idx_in_cp_j = np.where(in_cp_i > 0)[0], np.where(in_cp_j > 0)[0]
     shared_conflict_points = np.intersect1d(idx_in_cp_i, idx_in_cp_j)
     if shared_conflict_points.shape[0] == 0:
         return mttcp, min_t, shared_cps
@@ -342,6 +427,64 @@ def compute_agent_mttcp(
         idx = agents_mttcp.argmin()
         return agents_mttcp.min(), min_ts[idx], i_idx[idx]
     return agents_mttcp, min_ts, i_idx
+
+def compute_mttcp(
+    agent_i: Tuple,
+    agent_j: Tuple,
+    dist_threshold: float = 0.5,
+    return_critical_value: bool = False,
+    eps: float = C.EPS
+) -> Tuple:
+    """ Computes the minimum time to conflict point (mTTCP):
+
+                                   | 𝚫xi(t)     𝚫xj(t)  |
+        𝚫TTCP  =       min         |------  ‒‒  ------  |
+                  t in {0, tcp}    | 𝚫vi(t)     𝚫vj(t)  |
+
+    between any two timesteps between two trajectories that are within a distance threshold from each
+    other. Here t=0 is the time the two agents appear in the scene, and t=tcp is the first time one
+    of the agents crosses the conflict point. """
+    pos_i, vel_i, heading_i, is_stationary_i, in_cp_i, dist_cp_i = agent_i
+    pos_j, vel_j, heading_j, is_stationary_j, in_cp_j, dist_cp_j = agent_j
+
+    T, _ = pos_i.shape
+    mttcp, min_t = np.inf * np.ones(T), -1 * np.ones(T)
+
+    # T, 2 -> T, T
+    dists = np.linalg.norm(pos_i[:, None, :] - pos_j, axis=-1)
+    i_idx, j_idx = np.where(dists <= dist_threshold)
+    
+    vals, i_unique = np.unique(i_idx, return_index=True)
+    ii_idx = i_idx[i_unique]
+    if len(ii_idx) == 0:
+        return mttcp, min_t, None
+    
+    v_i = vel_i + eps
+    v_j = vel_j + eps
+
+    conflict_points = pos_i[ii_idx]
+    for cp in conflict_points:
+        di = np.linalg.norm(pos_i - cp, axis=-1)
+        ti = di.argmin()
+        dj = np.linalg.norm(pos_j - cp, axis=-1)
+        tj = dj.argmin()
+        t = min(ti, tj) + 1
+
+        ttcp_i = di[:t] / v_i[:t]
+        ttcp_j = dj[:t] / v_j[:t]
+        ttcp = np.abs(ttcp_i - ttcp_j)
+
+        mttcp[t-1] = ttcp.min()
+        min_t[t-1] = ttcp.argmin()
+
+    if return_critical_value:
+        ok = np.where(mttcp != np.inf)
+        mttcp = mttcp[ok]
+        if mttcp.shape[0] == 0:
+            return float('inf'), None, None
+        idx = mttcp.argmin()
+        return mttcp.min(), min_t[idx], i_idx[idx]
+    return mttcp, min_t, i_idx
 
 # --------------------------------------------------------------------------------------------------
 # NOTE: All below is unused for now but DO NOT DELETE.
