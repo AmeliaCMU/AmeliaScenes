@@ -24,7 +24,7 @@ Zelin Ye, Jong Hoon Park, [Jean Oh](https://cmubig.github.io/team/jean_oh/) and 
   <h5>Scene Scoring Example.</h5>
 </div>
 
-Finally, **AmeliaScenes** also provides a dataset splitting script with various ```train/val/test``` splitting strategies.
+Finally, **AmeliaScenes** also provides a dataset splitting script with various `train/val/test` splitting strategies.
 
 ## Pre-requisites
 
@@ -32,7 +32,7 @@ Finally, **AmeliaScenes** also provides a dataset splitting script with various 
 
 To run this repository, you first need to download the amelia dataset. Follow the instructions [here](https://ameliacmu.github.io/amelia-dataset/) to download the dataset.
 
-Once downloaded, create a symbolic link into  ```datasets```:
+Once downloaded, create a symbolic link into  `datasets`:
 
 ```bash
 cd datasets
@@ -41,16 +41,20 @@ ln -s /path/to/amelia .
 
 ### Installation
 
-Make sure that you have [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) installed. 
+Make sure that you have [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) installed.
 
-**Recommended:** Use the  `install.sh` to download and install the Amelia Framework:
+**Recommended:** Use the  [`install.sh`](https://github.com/AmeliaCMU/AmeliaScenes/blob/main/install.sh) to download and install the Amelia Framework:
 
 ```bash
 chmod +x install.sh
 ./install.sh amelia
 ```
 
-Alternatively, refer to `INSTALL.md` for manual installation.
+This will create a conda environment named `amelia` and install all dependencies.
+
+Alternatively, refer to [`INSTALL.md`](https://github.com/AmeliaCMU/AmeliaScenes/blob/main/INSTALL.md) for manual installation.
+
+**Note:** AmeliaScenes only requires the Amelia dataset to run, only refer to AmeliaScenes installation.
 
 ## How to use
 
@@ -66,39 +70,41 @@ Once you've installed the tools, and created the amelia environment, run:
 
 ```bash
 cd amelia_scenes
-python run_processor.py --airport [airport_icao] --parallel
+python run_processor.py --airport <airport_icao> --parallel
 ```
+
 where:
 
-- `[airport_icao]`: [ICAO](https://en.wikipedia.org/wiki/ICAO_airport_code) code of the airport to be processed. It can be one of the following: `kbos`, `kdca`, `kewr`, `kjfk`, `klax`, `kmdw`, `kmsy`, `ksea`, `ksfo`, `panc`. By default it is set to `kbos`.
-- `[parallel]`: If the processing should be done in parallel. By default it is set to `True`.
+- `<airport_icao>`: [ICAO](https://en.wikipedia.org/wiki/ICAO_airport_code) code of the airport to be processed. It can be one of the following: `kbos`, `kdca`, `kewr`, `kjfk`, `klax`, `kmdw`, `kmsy`, `ksea`, `ksfo`, `panc`. By default it is set to `kbos`.
+- `<parallel>`: If the processing should be done in parallel. By default it is set to `True`.
 
 Additional parameters can also be specified:
 
 ```bash
-python run_processor.py --airport [airport_icao] --to_process [scenes | metas | both] --parallel \
-                        --base_dir [path_to_dataset] \
-                        --traj_version [version]
-                        --graph_version [version] \
-                        --parallel [parallel] \
-                        --overwrite [overwrite] \
-                        --perc_process [percentage] \
-                        --seed [seed] \
-                        --jobs [jobs]
+python run_processor.py --airport <airport_icao> --to_process <scenes | metas | both> --parallel \
+                        --base_dir <path_to_dataset> \
+                        --traj_version <version>
+                        --graph_version <version> \
+                        --parallel <parallel> \
+                        --overwrite <overwrite> \
+                        --perc_process <percentage> \
+                        --seed <seed> \
+                        --jobs <jobs>
 ```
+
 where:
 
-- `[to_process]`: What to process. By default is set to `both`. Possible options are:
+- `<to_process>`: What to process. By default is set to `both`. Possible options are:
   - `scenes`: only generate scenes from the raw files
   - `metas`: generates meta information from already generated scenes. It uses scene scoring tools.
   - `both`: generates scenes and meta information, simultaneously.
-- `[base_dir]`: Path to the dataset. By default the path is set to `../datasets/amelia`.
-- `[traj_version]`: Version of the trajectory data. By default it is set to `a10v08`.
-- `[graph_version]`: Version of the graph data. By default it is set to `a10v01os`.
-- `[overwrite]`: If the processing should overwrite the existing data. By default it is set to `True`.
-- `[perc_process]`: Top limit visualization of the data being processed. By default it is set to `1.0`.
-- `[seed]`: Seed for the random number generator. By default it is set to `42`.
-- `[jobs]`: Number of Python worker processes to be used in parallel. By default it is set to `-1`, which will use all available CPUs.
+- `<base_dir>`: Path to the dataset. By default the path is set to `../datasets/amelia`.
+- `<traj_version>`: Version of the trajectory data. By default it is set to `a10v08`.
+- `<graph_version>`: Version of the graph data. By default it is set to `a10v01os`.
+- `<overwrite>`: If the processing should overwrite the existing data. By default it is set to `True`.
+- `<perc_process>`: Top limit visualization of the data being processed. By default it is set to `1.0`.
+- `<seed>`: Seed for the random number generator. By default it is set to `42`.
+- `<jobs>`: Number of Python worker processes to be used in parallel. By default it is set to `-1`, which will use all available CPUs.
 
 #### Expected output
 
@@ -145,12 +151,12 @@ Once the scenes are generated, the `run_create_splits.py` script can be run to s
 
 ``` bash
 cd amelia_scenes
-python run_create_splits.py --split_type [random | day | month]
+python run_create_splits.py --split_type <random | day | month>
 ```
 
 Where:
 
-- `[split_type]`: Type of split to be generated. By default it is set to `random`. Possible options are:
+- `<split_type>`: Type of split to be generated. By default it is set to `random`. Possible options are:
   - `random`: Randomly splits the dataset into `train/val/test` sets.
   - `day`: Daily splits the dataset into `train/val/test` sets.
   - `month`: Monthly splits the dataset into `train/val/test` sets.
@@ -159,15 +165,15 @@ Additional parameters can also be specified:
 
 ``` bash
 cd amelia_scenes
-python run_create_splits.py --split_type [random | day | month] \
-                        --base_dir [path_to_dataset] \
-                        --seed [seed] \
-                        --traj_version [version] \
+python run_create_splits.py --split_type <random | day | month> \
+                        --base_dir <path_to_dataset> \
+                        --seed <seed> \
+                        --traj_version <version> \
 ```
 
-- `[base_dir]`: Path to the dataset. By default the path is set to `../datasets/amelia`.
-- `[traj_version]`: Version of the trajectory data. By default it is set to `a10v08` to match the current released version.
-- `[seed]`: Seed for the random number generator. By default it is set to `42`.
+- `<base_dir>`: Path to the dataset. By default the path is set to `../datasets/amelia`.
+- `<traj_version>`: Version of the trajectory data. By default it is set to `a10v08` to match the current released version.
+- `<seed>`: Seed for the random number generator. By default it is set to `42`.
 
 #### Expected Output
 
