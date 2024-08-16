@@ -49,7 +49,7 @@ def get_sorted_order(values):
 
 
 def get_random_order(num_agents, agent_valid, seed):
-    # NOTE: an overkill way to create a randomized list of valid agent indeces + interpolated
+    # NOTE: an overkill way to create a randomized list of valid agent indices + interpolated
     # agent indeces. This is so that the __getitem__ function can choose a random ego-agent.
     agents_in_scene = np.asarray(list(range(num_agents)))
     valid_agents = agents_in_scene[agent_valid]

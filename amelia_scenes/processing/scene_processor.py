@@ -16,6 +16,7 @@ from typing import Tuple, List
 
 from amelia_scenes.scoring.interactive import compute_collision_masks
 
+
 class SceneProcessor:
     """ Dataset class for pre-processing airport surface movement data into scenes. """
 
@@ -60,9 +61,9 @@ class SceneProcessor:
             self.ref_data = EasyDict(json.load(fp))
 
         self.blacklist = []
-        blackist_file = os.path.join(self.blacklist_dir, f"{self.airport}.txt")
-        if os.path.exists(blackist_file) and not self.overwrite:
-            with open(blackist_file, 'r') as f:
+        blacklist_file = os.path.join(self.blacklist_dir, f"{self.airport}.txt")
+        if os.path.exists(blacklist_file) and not self.overwrite:
+            with open(blacklist_file, 'r') as f:
                 self.blacklist = f.read().splitlines()
 
         file_list = os.listdir(self.in_data_dir)
@@ -117,7 +118,7 @@ class SceneProcessor:
         """
         if self.benchmark:
             return self.process_file_bench(f)
-        
+
         base_name = f.split('/')[-1]
         shard_name = base_name.split('.')[0]
         airport_id = base_name.split('_')[0].lower()
@@ -179,7 +180,7 @@ class SceneProcessor:
             blacklist.append(f.removeprefix(self.in_data_dir+'/'))
             os.rmdir(data_dir)
         return blacklist
-    
+
     def process_file_bench(self, f: str) -> Tuple[List, List, List, List, List, List]:
         """ Processes a single data file. It first obtains the number of possible sequences (given
         the parameters in the configuration file) and then generates scene-level pickle files with
@@ -244,7 +245,7 @@ class SceneProcessor:
             # Get agent array based on random and safety criteria
             num_agents, _, _ = seq.shape
 
-            # NOTE: 
+            # NOTE:
             #              -inf --> invalid data points (interp, padding)
             #              inf  --> invalid data points (not in conflict)
             #   any other value --> collision / time-to-conflict-point
