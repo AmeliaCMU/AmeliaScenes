@@ -14,7 +14,10 @@ from joblib import Parallel, delayed
 from tqdm import tqdm
 from typing import Tuple, List
 
-from amelia_scenes.scoring.interactive import compute_collision_masks
+from amelia_scenes.scoring.crowdedness import compute_simple_scene_crowdedness
+from amelia_scenes.scoring.kinematic import compute_kinematic_scores
+from amelia_scenes.scoring.interactive import compute_interactive_scores, compute_collision_masks
+from amelia_scenes.scoring.critical import compute_simple_scene_critical
 
 class SceneProcessor:
     """ Dataset class for pre-processing airport surface movement data into scenes. """
@@ -40,8 +43,12 @@ class SceneProcessor:
         self.parallel = config.parallel
         self.overwrite = config.overwrite
         self.benchmark = config.benchmark
+        self.add_scores_meta = config.add_scores_meta
+
         self.add_padd = self.benchmark
         self.seed = config.seed
+        self.extend = True
+        self.seq_extent = 1
 
         self.pred_lens = config.pred_lens
         self.pred_len = max(self.pred_lens)
@@ -64,6 +71,13 @@ class SceneProcessor:
         if os.path.exists(blackist_file) and not self.overwrite:
             with open(blackist_file, 'r') as f:
                 self.blacklist = f.read().splitlines()
+
+        graph_data_dir = os.path.join(config.graph_data_dir, self.airport)
+        print(f"Loading graph data from: {graph_data_dir}")
+        pickle_map_filepath = os.path.join(graph_data_dir, "semantic_graph.pkl")
+        with open(pickle_map_filepath, 'rb') as f:
+            graph_pickle = pickle.load(f)
+            self.hold_lines = graph_pickle['hold_lines']
 
         file_list = os.listdir(self.in_data_dir)
         for duplicate in list(set(self.blacklist) & set(file_list)):
@@ -156,7 +170,7 @@ class SceneProcessor:
 
             # Get agent array based on random and safety criteria
             num_agents, _, _ = seq.shape
-            scenario = {
+            scene = {
                 'scenario_id': scenario_id,
                 'num_agents': num_agents,
                 'airport_id': airport_id,
@@ -166,13 +180,14 @@ class SceneProcessor:
                 'agent_masks': agent_mask,
                 'agent_valid': agent_valid,
             }
+            scene['meta'] = self.process_scores(EasyDict(scene)) if self.add_scores_meta else None
 
-            scenario_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
-            with open(scenario_filepath, 'wb') as f:
-                pickle.dump(scenario, f, protocol=pickle.HIGHEST_PROTOCOL)
+            scene_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
+            with open(scene_filepath, 'wb') as f:
+                pickle.dump(scene, f, protocol=pickle.HIGHEST_PROTOCOL)
 
             valid_seq += 1
-            sharded_files.append(scenario_filepath)
+            sharded_files.append(scene_filepath)
 
         # If directory is empty, remove it.
         if len(os.listdir(data_dir)) == 0:
@@ -206,18 +221,13 @@ class SceneProcessor:
         bench = pd.read_csv(bench_file)
 
         frames = data.Frame.unique().tolist()
-        fs, fe = bench.FrameStart.values[0], bench.FrameEnd.values[0]
-        frame_start = max(fs - 2 * self.seq_len, frames[0])
-        frame_end = min(fe + 3 * self.seq_len, frames[-1])
-        bench_agents = [int(agent) for agent in bench.AgentIDs.values[0].split(';')]
-        benchmark = {
-            'frame_start': fs,
-            'frame_start_ext': frame_start,
-            'frame_end': fe,
-            'frame_end_ext': frame_end,
-            'bench_agents': bench_agents,
-            'date': bench.Date
-        }
+        # fs, fe = bench.FrameStart.values[0], bench.FrameEnd.values[0]
+        fe = bench.CollisionFrame.values[0]
+        fs = fe - self.seq_len
+        # frame_start, frame_end = fs, fe
+        frame_start = max(fs - self.seq_extent * self.seq_len, frames[0])
+        frame_end = fe #min(fe + self.seq_extent * self.seq_len, frames[-1])
+
         frames = frames[frame_start:frame_end]
         frame_data = []
         for frame_num in frames:
@@ -229,6 +239,18 @@ class SceneProcessor:
         if num_sequences < 1:
             blacklist.append(f.removeprefix(self.in_data_dir+'/'))
             return blacklist
+        
+        bench_agents = [int(agent) for agent in bench.AgentIDs.values[0].split(';')]
+        benchmark = {
+            'frame_start': fs,
+            'frame_start_ext': frame_start,
+            'frame_end': fe,
+            'frame_end_ext': frame_end,
+            'collision_frame': fe,
+            'bench_agents': bench_agents,
+            'date': bench.Date,
+            'airport': bench.Airport
+        }
 
         sharded_files = []
         os.makedirs(data_dir, exist_ok=True)
@@ -251,9 +273,9 @@ class SceneProcessor:
             coll_masks = compute_collision_masks(seq, agent_type, agent_mask)
             benchmark['collision_mask'] = coll_masks['collisions']
             benchmark['mttcp_mask'] = coll_masks['mttcp']
-            benchmark['timestep'] = fe - i
+            benchmark['timestep'] = (num_sequences - i) / num_sequences
 
-            scenario = {
+            scene = {
                 'scenario_id': scenario_id,
                 'num_agents': num_agents,
                 'airport_id': airport_id,
@@ -264,13 +286,14 @@ class SceneProcessor:
                 'agent_valid': agent_valid,
                 'benchmark': benchmark
             }
+            scene['meta'] = self.process_scores(EasyDict(scene)) if self.add_scores_meta else None
 
-            scenario_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
-            with open(scenario_filepath, 'wb') as f:
-                pickle.dump(scenario, f, protocol=pickle.HIGHEST_PROTOCOL)
+            scene_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
+            with open(scene_filepath, 'wb') as f:
+                pickle.dump(scene, f, protocol=pickle.HIGHEST_PROTOCOL)
 
             valid_seq += 1
-            sharded_files.append(scenario_filepath)
+            sharded_files.append(scene_filepath)
 
         # If directory is empty, remove it.
         if len(os.listdir(data_dir)) == 0:
@@ -306,7 +329,7 @@ class SceneProcessor:
         # IDs of agents in the current sequence
         unique_agents = np.unique(seq_data[:, G.RAW_IDX.ID])
         num_agents = len(unique_agents)
-        if num_agents < self.min_agents or num_agents > self.max_agents:
+        if not self.benchmark and (num_agents < self.min_agents or num_agents > self.max_agents):
             return none_outs
 
         num_agents_considered = 0
@@ -379,3 +402,42 @@ class SceneProcessor:
 
         return seq[:num_agents_considered], agent_id_list, agent_type_list, valid_agent_list, \
             agent_masks[:num_agents_considered]
+
+    def process_scores(self, scene):
+        """ Computes kinematic and interactive scores for all valid agent sequences.
+
+        Inputs:
+        -------
+            scene[dict]: dictionary containing agent sequences and meta information. 
+
+        Outputs:
+        --------
+            scores[dict]: dictionary containing individual and interactive scores for each agent, 
+            and scene scores. 
+        """
+        crowd_scene_score = compute_simple_scene_crowdedness(scene, self.max_agents)
+        kin_agents_scores, kin_scene_score = compute_kinematic_scores(scene, self.hold_lines)
+        int_agents_scores, int_scene_score = compute_interactive_scores(scene, self.hold_lines)
+        crit_agent_scores, crit_scene_score = compute_simple_scene_critical(
+            agent_scores_list=[kin_agents_scores, int_agents_scores],
+            scene_score_list=[crowd_scene_score, kin_scene_score, int_scene_score]
+        )
+        return  {
+            'agent_scores': {
+                'kinematic': kin_agents_scores,
+                'interactive': int_agents_scores,
+                'critical': crit_agent_scores
+            },
+            'agent_order': {
+                'random': C.get_random_order(scene.num_agents, scene.agent_valid, self.seed),
+                'kinematic': C.get_sorted_order(kin_agents_scores),
+                'interactive': C.get_sorted_order(int_agents_scores),
+                'critical': C.get_sorted_order(crit_agent_scores)
+            },
+            'scene_scores': {
+                'crowdedness': crowd_scene_score,
+                'kinematic': kin_scene_score,
+                'interactive': int_scene_score,
+                'critical': crit_scene_score
+            },
+        }

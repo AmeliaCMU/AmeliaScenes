@@ -20,7 +20,7 @@ EPS = 1e-5
 WEIGHTS = {
     AIRCRAFT: 1.0,
     VEHICLE: 0.2,
-    UNKNOWN: 0.6
+    UNKNOWN: 0.4
 }
 
 KNOTS_TO_MPS = 0.51444445

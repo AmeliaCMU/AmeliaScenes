@@ -19,6 +19,7 @@ def run(
     num_scenes: int, 
     perc: float, 
     benchmark: bool,
+    scene_type: str,
     seed: int,
     dpi: int
 ):
@@ -39,7 +40,7 @@ def run(
         else:
             scene_files = scene_files[:int(len(scene_files) * perc)]
     
-    out_dir = os.path.join(out_path, SUBDIR, airport)
+    out_dir = os.path.join(out_path, SUBDIR, airport, scene_type)
     os.makedirs(out_dir, exist_ok=True)
 
     for scene_file in tqdm(scene_files):
@@ -49,7 +50,7 @@ def run(
         fsplit = scene_file.split('/')
         scenario_name, scenario_id = fsplit[-2], fsplit[-1].split('.')[0]
         filetag = os.path.join(out_dir, f"{scenario_name}_{scenario_id}.png")
-        viz.plot_scene(scene, assets, filetag, dpi=dpi)
+        viz.plot_scene(scene, assets, filetag, scene_type, dpi=dpi)
 
 if __name__ == "__main__":
     import argparse 
@@ -86,6 +87,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--benchmark", 
         action='store_true')
+    parser.add_argument(
+        "--scene_type",
+        default='simple',
+        choices=['simple', 'features', 'scores', 'strategy'])
     parser.add_argument(
         "--seed", 
         type=int,

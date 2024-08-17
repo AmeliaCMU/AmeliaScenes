@@ -163,7 +163,7 @@ def compute_interactive_metrics(
             agent_j=agent_j,
             return_critical_value=return_critical_value)[0]
 
-        metrics["agent_mttcp"][-1] = compute_agent_mttcp(
+        metrics["agent_mttcp"][-1] = compute_agent_mttcp_(
             agent_i=agent_i,
             agent_j=agent_j,
             dist_threshold=separation_dist_thresh,
@@ -427,6 +427,65 @@ def compute_agent_mttcp(
         idx = agents_mttcp.argmin()
         return agents_mttcp.min(), min_ts[idx], i_idx[idx]
     return agents_mttcp, min_ts, i_idx
+
+def compute_agent_mttcp_(
+    agent_i: Tuple,
+    agent_j: Tuple,
+    dist_threshold: float = 0.5,
+    return_critical_value: bool = False,
+    eps: float = C.EPS
+) -> Tuple:
+    """ Computes the minimum time to conflict point (mTTCP):
+
+                                   | 𝚫xi(t)     𝚫xj(t)  |
+        𝚫TTCP  =       min         |------  ‒‒  ------  |
+                  t in {0, tcp}    | 𝚫vi(t)     𝚫vj(t)  |
+
+    between any two timesteps between two trajectories that are within a distance threshold from each
+    other. Here t=0 is the time the two agents appear in the scene, and t=tcp is the first time one
+    of the agents crosses the conflict point. """
+    pos_i, vel_i, heading_i, is_stationary_i, in_cp_i, dist_cp_i = agent_i
+    pos_j, vel_j, heading_j, is_stationary_j, in_cp_j, dist_cp_j = agent_j
+
+    T, _ = pos_i.shape
+    mttcp, min_t = np.inf * np.ones(T), -1 * np.ones(T)
+
+    # T, 2 -> T, T
+    dists = np.linalg.norm(pos_i[:, None, :] - pos_j, axis=-1)
+    i_idx, j_idx = np.where(dists <= dist_threshold)
+    
+    vals, i_unique = np.unique(i_idx, return_index=True)
+    ii_idx = i_idx[i_unique]
+    if len(ii_idx) == 0:
+        mttcp = np.inf
+        return mttcp, min_t, None
+    
+    v_i = vel_i + eps
+    v_j = vel_j + eps
+
+    conflict_points = pos_i[ii_idx]
+    for cp in conflict_points:
+        di = np.linalg.norm(pos_i - cp, axis=-1)
+        ti = di.argmin()
+        dj = np.linalg.norm(pos_j - cp, axis=-1)
+        tj = dj.argmin()
+        t = min(ti, tj) + 1
+
+        ttcp_i = di[:t] / v_i[:t]
+        ttcp_j = dj[:t] / v_j[:t]
+        ttcp = np.abs(ttcp_i - ttcp_j)
+
+        mttcp[t-1] = ttcp.min()
+        min_t[t-1] = ttcp.argmin()
+
+    if return_critical_value:
+        ok = np.where(mttcp != np.inf)
+        mttcp = mttcp[ok]
+        if mttcp.shape[0] == 0:
+            return float('inf'), None, None
+        idx = mttcp.argmin()
+        return mttcp.min(), min_t[idx], i_idx[idx]
+    return mttcp, min_t, i_idx
 
 def compute_mttcp(
     agent_i: Tuple,

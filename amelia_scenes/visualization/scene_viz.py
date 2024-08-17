@@ -1,8 +1,12 @@
+import glob
 import matplotlib.pyplot as plt 
 import numpy as np
+import os
 
 from matplotlib import cm
 from matplotlib.offsetbox import AnnotationBbox
+from natsort import natsorted
+from PIL import Image
 from typing import Tuple
 
 from amelia_scenes.visualization import common as C
@@ -12,6 +16,7 @@ def plot_scene(
     scenario: dict, 
     assets: Tuple, 
     filetag: str, 
+    scene_type: str = 'simple',
     scores: bool = False,
     features_to_add: list = [],
     features: dict = {},
@@ -28,40 +33,43 @@ def plot_scene(
         features[dict]: computed features for each agent.
         dpi[int]: image dpi to save.
     """
-    agent_types = scenario['agent_types']
-    agent_masks = scenario['agent_masks']
     agent_sequences = scenario['agent_sequences'][:, :, G.HLL]
+    agent_masks = scenario['agent_masks']
+    agent_types = scenario['agent_types']
     agent_ids = scenario['agent_ids']
-    agent_scores = scenario['meta']['agent_scores'] if scores else None
-    
-    agents_interest = scenario['benchmark']['bench_agents'] if not scenario.get(
-        'benchmark') is None else []
 
-    if scores:
+    agents = (agent_sequences, agent_masks, agent_types, agent_ids)
+
+    assert scene_type in ['simple', 'benchmark', 'features', 'scores', 'strategy'], \
+        f"Scene type not supported {scene_type}"
+    
+    if scene_type == 'simple':
+        plot_scene_simple(agents, assets, tag=filetag, dpi=dpi)
+    elif scene_type == 'benchmark':
+        benchmark = scenario['benchmark']
+        plot_scene_benchmark(agents, assets, tag=filetag, benchmark=benchmark, dpi=dpi)
+    elif scene_type == 'strategy':
+        raise NotImplementedError
+        agent_order = scenario['meta']['agent_order']
+        plot_scene_strategy(
+            agent_sequences, agent_order, assets, agent_masks, agent_types, agent_ids, tag=filetag, 
+            dpi=dpi)
+    elif scene_type == 'scores':
+        raise NotImplementedError
+        agents_interest = benchmark['bench_agents']
+        agent_scores = scenario['meta']['agent_scores'] if scores else None
         plot_scene_scores(
             agent_sequences, agent_scores, assets, agent_masks, agent_types, agent_ids, tag=filetag, 
-            agents_interest=agents_interest, dpi=dpi)
-    elif not len(features_to_add):
-        plot_scene_simple(
-            agent_sequences, assets, agent_masks, agent_types, agent_ids, tag=filetag, 
             agents_interest=agents_interest, dpi=dpi)
     else:
         raise NotImplementedError
         plot_scene_features(scenario, assets, filetag, features_to_add, features, dpi=dpi)
 
 def plot_scene_simple(
-    agent_sequences: np.array, 
-    assets: Tuple, 
-    agent_masks: np.array = None, 
-    agent_types: np.array = None, 
-    agent_ids: np.array = None,
-    agents_interest: list = [],
-    tag: str = 'temp.png', 
-    dpi=600
+    agents: Tuple, assets: Tuple, agents_interest: list = [], tag: str = 'temp.png', dpi=600
 ) -> None:
-    """ Tool for visualizing marginal model predictions for the ego-agent. """
-    mm =  C.MOTION_COLORS['multi_modal']
-    
+    """ Visualize simple scenes """
+    agent_sequences, agent_masks, agent_types, agent_ids = agents
     bkg, hold_lines, graph_nx, limits, agents = assets
     north, east, south, west, z_min, z_max = limits
 
@@ -69,10 +77,6 @@ def plot_scene_simple(
 
     # Display global map
     ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=.2) 
-    # ax.set_facecolor('slategrey')
-    
-    # Iterate through agent in the scene
-    # all_lon, all_lat, scores = [], [], []
 
     zipped = zip(agent_sequences, agent_types, agent_masks, agent_ids)
     for n, (trajectory, agent_type, mask, agent_id) in enumerate(zipped):
@@ -110,6 +114,139 @@ def plot_scene_simple(
 
     # Set figure bbox around the predicted trajectory
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0) 
+    plt.savefig(tag, dpi=dpi, bbox_inches='tight', pad_inches=0)
+    plt.close()
+
+def plot_scene_benchmark(
+    agents: Tuple, assets: Tuple, benchmark: dict = None, tag: str = 'temp.png', dpi=600
+) -> None:
+    """ Visualizing benchmark scenes. Like 'plot_scene_simple' but adds benchmark metadata """
+    agent_sequences, agent_masks, agent_types, agent_ids = agents    
+    bkg, hold_lines, graph_nx, limits, agents = assets
+    north, east, south, west, z_min, z_max = limits
+
+    fig, ax = plt.subplots()
+
+    # Display global map
+    ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.5) 
+    
+    agents_interest = benchmark['bench_agents']
+    halo_values = benchmark['timestep']
+    airport_name = benchmark['airport'].values[0]
+    date = benchmark['date'].values[0]
+    ax.set_title(f"{airport_name.upper()} ({date})")
+
+    zipped = zip(agent_sequences, agent_types, agent_masks, agent_ids)
+    for n, (trajectory, agent_type, mask, agent_id) in enumerate(zipped):
+    
+        trajectory = trajectory[mask]
+        if trajectory.shape[0] == 0:
+            continue
+        # Get heading at last point of trajectory history.
+        gt_traj_ll, gt_heading = trajectory[:, 1:], trajectory[-1, 0] 
+        lon, lat = gt_traj_ll[-1, 1], gt_traj_ll[-1, 0]
+        if lon == 0 or lat == 0:
+            continue
+
+        agent_type= int(agent_type)
+        # Place plane on last point of ground truth sequence
+        icon = agents[agent_type]
+        img = C.plot_agent(icon, gt_heading, zoom=C.ZOOM[agent_type])
+        if agent_id in agents_interest:
+            color = cm.autumn(halo_values) # '#F29C3A'
+            ax.scatter(lon, lat, color=color, alpha=C.MOTION_COLORS['ego_agent'][1], s = 160)
+                
+        ab = AnnotationBbox(img, (lon, lat), frameon = False) 
+        ax.add_artist(ab)
+        # Plot past sequence
+        ax.plot(
+            gt_traj_ll[:, 1], gt_traj_ll[:, 0], color = C.MOTION_COLORS['gt_hist'][0], 
+            lw = C.MOTION_COLORS['gt_hist'][1]) 
+    
+    # Plot movement
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.spines['top'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    # Set figure bbox around the predicted trajectory
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0) 
+    plt.savefig(tag, dpi=dpi, bbox_inches='tight', pad_inches=0)
+    plt.close()
+
+def plot_scene_strategy(
+    agent_sequences: np.array, 
+    agent_order: dict,
+    assets: Tuple, 
+    agent_masks: np.array = None, 
+    agent_types: np.array = None, 
+    agent_ids: np.array = None,
+    k_agents: int = 6,
+    tag: str = 'temp.png', 
+    dpi=600
+) -> None:
+    """ Tool for visualizing marginal model predictions for the ego-agent. """
+    mm =  C.MOTION_COLORS['multi_modal']
+    
+    bkg, hold_lines, graph_nx, limits, agents = assets
+    north, east, south, west, z_min, z_max = limits
+
+    fig, axs = plt.subplots(1, 2, figsize=(30, 80))
+    
+    random_order = agent_order['random'][:k_agents]
+    critical_order = agent_order['critical'][:k_agents]
+
+    # Display global map
+    for ax in axs.reshape(-1):
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines['top'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.8) 
+
+    zipped = zip(agent_sequences, agent_types, agent_masks, agent_ids)
+    for n, (trajectory, agent_type, mask, agent_id) in enumerate(zipped):
+        trajectory = trajectory[mask]
+        if trajectory.shape[0] == 0:
+            continue
+
+        # Plot scene only
+        # Get heading at last point of trajectory history.
+        gt_traj_ll, gt_heading = trajectory[:, 1:], trajectory[-1, 0] 
+        lon, lat = gt_traj_ll[-1, 1], gt_traj_ll[-1, 0]
+        if lon == 0 or lat == 0:
+            continue
+
+        agent_type = int(agent_type)
+        # Place plane on last point of ground truth sequence
+        icon = agents[agent_type]
+        img = C.plot_agent(icon, gt_heading, zoom=C.ZOOM[agent_type])
+        
+        if n in random_order:
+            axs[0].scatter(lon, lat, color='#F39C12', alpha=C.MOTION_COLORS['ego_agent'][1], s = 160)
+
+        if n in critical_order:
+            axs[1].scatter(lon, lat, color='#F39C12', alpha=C.MOTION_COLORS['ego_agent'][1], s = 160)
+                
+        ab = AnnotationBbox(img, (lon, lat), frameon = False) 
+        axs[0].add_artist(ab)
+
+        ab = AnnotationBbox(img, (lon, lat), frameon = False) 
+        axs[1].add_artist(ab)
+    
+        axs[0].plot(
+            gt_traj_ll[:, 1], gt_traj_ll[:, 0], color = C.MOTION_COLORS['gt_hist'][0], 
+            lw = C.MOTION_COLORS['gt_hist'][1]) 
+        axs[1].plot(
+            gt_traj_ll[:, 1], gt_traj_ll[:, 0], color = C.MOTION_COLORS['gt_hist'][0], 
+            lw = C.MOTION_COLORS['gt_hist'][1])     
+            
+    # Set figure bbox around the predicted trajectory
+    plt.subplots_adjust(hspace=0.1) 
     plt.savefig(tag, dpi=dpi, bbox_inches='tight', pad_inches=0)
     plt.close()
 
@@ -196,6 +333,9 @@ def plot_scene_scores(
     plt.savefig(tag, dpi=dpi, bbox_inches='tight', pad_inches=0)
     plt.close()
 
+def plot_scene_features():
+    raise NotImplemented
+
 # def plot_scene_animation(
 #     asset_dir: str, 
 #     scene: dict, 
@@ -273,3 +413,13 @@ def plot_scene_scores(
 #             duration=200, loop=0)
 #         for f in files:
 #             os.remove(f)
+
+def to_gif(base_dir, scene_tag):
+    files = natsorted(glob.glob(f"{base_dir}/{scene_tag}*.png"))
+    imgs = [Image.open(f) for f in natsorted(glob.glob(f"{base_dir}/{scene_tag}*.png"))]
+    imgs[0].save(
+        f'{base_dir}/{scene_tag}.gif', format='GIF', append_images=imgs[1:], save_all=True,
+        duration=200, loop=0)
+    
+    for f in files:
+        os.remove(f)

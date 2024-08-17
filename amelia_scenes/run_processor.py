@@ -20,6 +20,7 @@ def run(
 ) -> None:
     traj_data_dir = f"traj_data_benchmark" if benchmark else f"traj_data_{traj_version}"
     bench_data_dir = os.path.join(base_dir, traj_data_dir, 'benchmark')
+    add_scores_meta = False
     if to_process == 'scenes':
         from amelia_scenes.processing.scene_processor import SceneProcessor as Pr
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'raw_trajectories')
@@ -29,7 +30,8 @@ def run(
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes')
         out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes_meta')
     else:
-        from amelia_scenes.processing.full_processor import FullProcessor as Pr
+        from amelia_scenes.processing.scene_processor import SceneProcessor as Pr
+        add_scores_meta = True
         in_data_dir = os.path.join(base_dir, traj_data_dir, 'raw_trajectories')
         out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_full_scenes')
 
@@ -45,6 +47,7 @@ def run(
         "perc_process": perc_process,
         'overwrite': overwrite,
         "benchmark": benchmark,
+        "add_scores_meta": add_scores_meta,
         "pred_lens": [20, 50],
         "hist_len": 10,
         "skip": 1,
@@ -69,7 +72,7 @@ if __name__ == "__main__":
     parser.add_argument("--overwrite", action='store_true')
     parser.add_argument("--benchmark", action='store_true')
     parser.add_argument("--perc_process", type=float, default=1.0)
-    parser.add_argument("--to_process", default='both', choices=['scenes', 'metas', 'both'])
+    parser.add_argument("--to_process", default='all', choices=['scenes', 'metas', 'all'])
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--jobs", type=int, default=-1)
     args = parser.parse_args()
