@@ -95,10 +95,10 @@ def load_blacklist(data_prep: EasyDict, airport_list: list):
     os.makedirs(blacklist_dir, exist_ok=True)
     blacklist = {}
     for airport in airport_list:
-        blackist_file = os.path.join(blacklist_dir, f"{airport}_{data_prep.split_type}.txt")
+        blacklist_file = os.path.join(blacklist_dir, f"{airport}_{data_prep.split_type}.txt")
         blacklist[airport] = []
-        if os.path.exists(blackist_file):
-            with open(blackist_file, 'r') as f:
+        if os.path.exists(blacklist_file):
+            with open(blacklist_file, 'r') as f:
                 blacklist[airport] = f.read().splitlines()
     return blacklist
 
@@ -192,7 +192,7 @@ def create_day_splits(data_prep: dict, airport_list: list):
         # collected.
         airport_files = np.asarray(get_airport_files(airport, data_prep))
         days_per_file = np.asarray([datetime.fromtimestamp(
-            int(f.split('/')[-1].split('.')[0].split('_')[-1]), 
+            int(f.split('/')[-1].split('.')[0].split('_')[-1]),
             tz=timezone.utc).day for f in airport_files])
 
         days = np.unique(days_per_file)
@@ -245,7 +245,7 @@ def create_month_splits(data_prep: dict, airport_list: list):
         # collected.
         airport_files = np.asarray(get_airport_files(airport, data_prep))
         month_per_file = np.asarray([datetime.fromtimestamp(
-            int(f.split('/')[-1].split('.')[0].split('_')[-1]), 
+            int(f.split('/')[-1].split('.')[0].split('_')[-1]),
             tz=timezone.utc).month for f in airport_files])
 
         months = np.unique(month_per_file)

@@ -37,8 +37,9 @@ authors = [
 ]
 
 
-[tool.setuptools.packages.find]
-where = ["amelia_scenes"]
+[tool.setuptools]
+packages = ["amelia_scenes", "amelia_scenes.processing", "amelia_scenes.scoring", "amelia_scenes.utils", "amelia_scenes.visualization"]
+
 
 [project.urls]
 Repository = "https://github.com/AmeliaCMU/AmeliaScenes"

@@ -67,17 +67,10 @@ class SceneProcessor:
             self.ref_data = EasyDict(json.load(fp))
 
         self.blacklist = []
-        blackist_file = os.path.join(self.blacklist_dir, f"{self.airport}.txt")
-        if os.path.exists(blackist_file) and not self.overwrite:
-            with open(blackist_file, 'r') as f:
+        blacklist_file = os.path.join(self.blacklist_dir, f"{self.airport}.txt")
+        if os.path.exists(blacklist_file) and not self.overwrite:
+            with open(blacklist_file, 'r') as f:
                 self.blacklist = f.read().splitlines()
-
-        graph_data_dir = os.path.join(config.graph_data_dir, self.airport)
-        print(f"Loading graph data from: {graph_data_dir}")
-        pickle_map_filepath = os.path.join(graph_data_dir, "semantic_graph.pkl")
-        with open(pickle_map_filepath, 'rb') as f:
-            graph_pickle = pickle.load(f)
-            self.hold_lines = graph_pickle['hold_lines']
 
         file_list = os.listdir(self.in_data_dir)
         for duplicate in list(set(self.blacklist) & set(file_list)):
@@ -131,7 +124,7 @@ class SceneProcessor:
         """
         if self.benchmark:
             return self.process_file_bench(f)
-        
+            
         base_name = f.split('/')[-1]
         shard_name = base_name.split('.')[0]
         airport_id = base_name.split('_')[0].lower()

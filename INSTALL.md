@@ -82,5 +82,3 @@ git clone git@github.com:AmeliaCMU/AmeliaSWIM.git
 cd AmeliaSWIM
 pip install -e .
 ```
-
-**Note:** AmeliaDataTools requires AmeliaScenes dependencies to run.
