@@ -66,6 +66,13 @@ class SceneProcessor:
         with open(limits_file, 'r') as fp:
             self.ref_data = EasyDict(json.load(fp))
 
+        graph_data_dir = os.path.join(config.graph_data_dir, self.airport)
+        print(f"Loading graph data from: {graph_data_dir}")
+        pickle_map_filepath = os.path.join(graph_data_dir, "semantic_graph.pkl")
+        with open(pickle_map_filepath, 'rb') as f:
+            graph_pickle = pickle.load(f)
+            self.hold_lines = graph_pickle['hold_lines']
+            
         self.blacklist = []
         blacklist_file = os.path.join(self.blacklist_dir, f"{self.airport}.txt")
         if os.path.exists(blacklist_file) and not self.overwrite:
