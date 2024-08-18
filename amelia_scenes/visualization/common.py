@@ -119,7 +119,7 @@ def plot_speed_histogram(ax, vel_mu, vel_sigma, vel_hist, vel_fut):
     
 def transform_extent(extent, original_crs: str, target_crs: str):
     transformer = Transformer.from_crs(original_crs, target_crs)
-    north, east, south, west = extent
+    north, east, south, west, _, _ = extent
     xmin_trans, ymin_trans = transformer.transform(south, west)
     xmax_trans, ymax_trans = transformer.transform(north, east)
     return (ymax_trans, xmax_trans, ymin_trans, xmin_trans)

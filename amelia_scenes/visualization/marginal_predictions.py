@@ -11,7 +11,8 @@ import amelia_scenes.visualization.common as C
 def plot_scene_marginal_fast(
         gt_history: np.array, gt_future: np.array, pred_trajectories: np.array, pred_scores: np.array,
         sigmas: np.array, maps: Tuple, ll_extent: Tuple, agent_types: np.array = None, tag: str = 'temp.png',
-        ego_id: int = 0, out_dir: str = './out', agents_interest: list = [], change_projection: bool = False, projection: str = 'EPSG:3857') -> None:
+        ego_id: int = 0, out_dir: str = './out', agents_interest: list = [], change_projection: bool = False, 
+        projection: str = 'EPSG:3857') -> None:
     """ Tool for visualizing marginal model predictions for the ego-agent. """
     mm = C.MOTION_COLORS['multi_modal']
 

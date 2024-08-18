@@ -33,6 +33,7 @@ def plot_scene(
         features[dict]: computed features for each agent.
         dpi[int]: image dpi to save.
     """
+    reproject = True if scenario['airport_id'] in ['panc', 'kmsy'] else False
     agent_sequences = scenario['agent_sequences'][:, :, G.HLL]
     agent_masks = scenario['agent_masks']
     agent_types = scenario['agent_types']
@@ -44,10 +45,11 @@ def plot_scene(
         f"Scene type not supported {scene_type}"
     
     if scene_type == 'simple':
-        plot_scene_simple(agents, assets, tag=filetag, dpi=dpi)
+        plot_scene_simple(agents, assets, tag=filetag, dpi=dpi, reproject=reproject)
     elif scene_type == 'benchmark':
         benchmark = scenario['benchmark']
-        plot_scene_benchmark(agents, assets, tag=filetag, benchmark=benchmark, dpi=dpi)
+        plot_scene_benchmark(
+            agents, assets, tag=filetag, benchmark=benchmark, dpi=dpi, reproject=reproject)
     elif scene_type == 'strategy':
         raise NotImplementedError
         agent_order = scenario['meta']['agent_order']
@@ -66,43 +68,45 @@ def plot_scene(
         plot_scene_features(scenario, assets, filetag, features_to_add, features, dpi=dpi)
 
 def plot_scene_simple(
-    agents: Tuple, assets: Tuple, agents_interest: list = [], tag: str = 'temp.png', dpi=600
+    agents: Tuple, assets: Tuple, agents_interest: list = [], tag: str = 'temp.png', dpi=600, 
+    reproject: bool = False, projection: str = 'EPSG:3857'
 ) -> None:
     """ Visualize simple scenes """
     agent_sequences, agent_masks, agent_types, agent_ids = agents
     bkg, hold_lines, graph_nx, limits, agents = assets
     north, east, south, west, z_min, z_max = limits
+    if reproject:
+        north, east, south, west = C.transform_extent(limits, C.MAP_CRS, projection)
 
     fig, ax = plt.subplots()
 
     # Display global map
     ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=.2) 
 
+    # Display each trajectory
+    traj_color, traj_lw = C.MOTION_COLORS['gt_hist'][0], C.MOTION_COLORS['gt_hist'][1]
     zipped = zip(agent_sequences, agent_types, agent_masks, agent_ids)
     for n, (trajectory, agent_type, mask, agent_id) in enumerate(zipped):
-    
-        trajectory = trajectory[mask]
-        if trajectory.shape[0] == 0:
+        traj = trajectory[mask]
+        if traj.shape[0] == 0:
             continue
         # Get heading at last point of trajectory history.
-        gt_traj_ll, gt_heading = trajectory[:, 1:], trajectory[-1, 0] 
-        lon, lat = gt_traj_ll[-1, 1], gt_traj_ll[-1, 0]
+        heading = traj[-1, 0] 
+        traj_ll = C.reproject_sequences(traj[:, 1:], projection) if reproject else traj[:, 1:]
+        lon, lat = traj_ll[-1, 1], traj_ll[-1, 0]
         if lon == 0 or lat == 0:
             continue
 
         agent_type= int(agent_type)
         # Place plane on last point of ground truth sequence
         icon = agents[agent_type]
-        img = C.plot_agent(icon, gt_heading, zoom=C.ZOOM[agent_type])
+        img = C.plot_agent(icon, heading, zoom=C.ZOOM[agent_type])
         if agent_id in agents_interest:
             ax.scatter(lon, lat, color='#F29C3A', alpha=C.MOTION_COLORS['ego_agent'][1], s = 160)
                 
         ab = AnnotationBbox(img, (lon, lat), frameon = False) 
         ax.add_artist(ab)
-        # Plot past sequence
-        ax.plot(
-            gt_traj_ll[:, 1], gt_traj_ll[:, 0], color = C.MOTION_COLORS['gt_hist'][0], 
-            lw = C.MOTION_COLORS['gt_hist'][1]) 
+        ax.plot(traj_ll[:, 1], traj_ll[:, 0], color=traj_color, lw=traj_lw) 
     
     # Plot movement
     ax.set_xticks([])
@@ -118,12 +122,15 @@ def plot_scene_simple(
     plt.close()
 
 def plot_scene_benchmark(
-    agents: Tuple, assets: Tuple, benchmark: dict = None, tag: str = 'temp.png', dpi=600
+    agents: Tuple, assets: Tuple, benchmark: dict = None, tag: str = 'temp.png', dpi=600, 
+    reproject: bool = False, projection: str = 'EPSG:3857'
 ) -> None:
     """ Visualizing benchmark scenes. Like 'plot_scene_simple' but adds benchmark metadata """
     agent_sequences, agent_masks, agent_types, agent_ids = agents    
     bkg, hold_lines, graph_nx, limits, agents = assets
     north, east, south, west, z_min, z_max = limits
+    if reproject:
+        north, east, south, west = C.transform_extent(limits, C.MAP_CRS, projection)
 
     fig, ax = plt.subplots()
 
@@ -136,32 +143,32 @@ def plot_scene_benchmark(
     date = benchmark['date'].values[0]
     ax.set_title(f"{airport_name.upper()} ({date})")
 
+    traj_color, traj_lw = C.MOTION_COLORS['gt_hist'][0], C.MOTION_COLORS['gt_hist'][1]
     zipped = zip(agent_sequences, agent_types, agent_masks, agent_ids)
     for n, (trajectory, agent_type, mask, agent_id) in enumerate(zipped):
     
-        trajectory = trajectory[mask]
-        if trajectory.shape[0] == 0:
+        traj = trajectory[mask]
+        if traj.shape[0] == 0:
             continue
         # Get heading at last point of trajectory history.
-        gt_traj_ll, gt_heading = trajectory[:, 1:], trajectory[-1, 0] 
-        lon, lat = gt_traj_ll[-1, 1], gt_traj_ll[-1, 0]
+        heading = traj[-1, 0]
+        traj_ll = C.reproject_sequences(traj[:, 1:], projection) if reproject else traj[:, 1:]
+        lon, lat = traj_ll[-1, 1], traj_ll[-1, 0]
         if lon == 0 or lat == 0:
             continue
 
-        agent_type= int(agent_type)
-        # Place plane on last point of ground truth sequence
+        # Plot agent icon on last point of sequence. If it's a benchmark agent add halo.
+        agent_type = int(agent_type)
         icon = agents[agent_type]
-        img = C.plot_agent(icon, gt_heading, zoom=C.ZOOM[agent_type])
+        img = C.plot_agent(icon, heading, zoom=C.ZOOM[agent_type])
         if agent_id in agents_interest:
             color = cm.autumn(halo_values) # '#F29C3A'
-            ax.scatter(lon, lat, color=color, alpha=C.MOTION_COLORS['ego_agent'][1], s = 160)
-                
+            ax.scatter(lon, lat, color=color, alpha=C.MOTION_COLORS['ego_agent'][1], s = 160)        
         ab = AnnotationBbox(img, (lon, lat), frameon = False) 
         ax.add_artist(ab)
-        # Plot past sequence
-        ax.plot(
-            gt_traj_ll[:, 1], gt_traj_ll[:, 0], color = C.MOTION_COLORS['gt_hist'][0], 
-            lw = C.MOTION_COLORS['gt_hist'][1]) 
+
+        # Plot rest of the sequence
+        ax.plot(traj_ll[:, 1], traj_ll[:, 0], color=traj_color, lw=traj_lw) 
     
     # Plot movement
     ax.set_xticks([])
@@ -216,15 +223,15 @@ def plot_scene_strategy(
 
         # Plot scene only
         # Get heading at last point of trajectory history.
-        gt_traj_ll, gt_heading = trajectory[:, 1:], trajectory[-1, 0] 
-        lon, lat = gt_traj_ll[-1, 1], gt_traj_ll[-1, 0]
+        traj_ll, heading = trajectory[:, 1:], trajectory[-1, 0] 
+        lon, lat = traj_ll[-1, 1], traj_ll[-1, 0]
         if lon == 0 or lat == 0:
             continue
 
         agent_type = int(agent_type)
         # Place plane on last point of ground truth sequence
         icon = agents[agent_type]
-        img = C.plot_agent(icon, gt_heading, zoom=C.ZOOM[agent_type])
+        img = C.plot_agent(icon, heading, zoom=C.ZOOM[agent_type])
         
         if n in random_order:
             axs[0].scatter(lon, lat, color='#F39C12', alpha=C.MOTION_COLORS['ego_agent'][1], s = 160)
@@ -239,10 +246,10 @@ def plot_scene_strategy(
         axs[1].add_artist(ab)
     
         axs[0].plot(
-            gt_traj_ll[:, 1], gt_traj_ll[:, 0], color = C.MOTION_COLORS['gt_hist'][0], 
+            traj_ll[:, 1], traj_ll[:, 0], color = C.MOTION_COLORS['gt_hist'][0], 
             lw = C.MOTION_COLORS['gt_hist'][1]) 
         axs[1].plot(
-            gt_traj_ll[:, 1], gt_traj_ll[:, 0], color = C.MOTION_COLORS['gt_hist'][0], 
+            traj_ll[:, 1], traj_ll[:, 0], color = C.MOTION_COLORS['gt_hist'][0], 
             lw = C.MOTION_COLORS['gt_hist'][1])     
             
     # Set figure bbox around the predicted trajectory
@@ -295,15 +302,15 @@ def plot_scene_scores(
         # Plot scene only
         axs[0].set_title('Scene')
         # Get heading at last point of trajectory history.
-        gt_traj_ll, gt_heading = trajectory[:, 1:], trajectory[-1, 0] 
-        lon, lat = gt_traj_ll[-1, 1], gt_traj_ll[-1, 0]
+        traj_ll, heading = trajectory[:, 1:], trajectory[-1, 0] 
+        lon, lat = traj_ll[-1, 1], traj_ll[-1, 0]
         if lon == 0 or lat == 0:
             continue
 
         agent_type = int(agent_type)
         # Place plane on last point of ground truth sequence
         icon = agents[agent_type]
-        img = C.plot_agent(icon, gt_heading, zoom=C.ZOOM[agent_type])
+        img = C.plot_agent(icon, heading, zoom=C.ZOOM[agent_type])
         if agent_id in agents_interest:
             axs[0].scatter(lon, lat, color='#66B7F7', alpha=C.MOTION_COLORS['ego_agent'][1], s = 160)
                 
@@ -311,7 +318,7 @@ def plot_scene_scores(
         axs[0].add_artist(ab)
         # Plot past sequence
         axs[0].plot(
-            gt_traj_ll[:, 1], gt_traj_ll[:, 0], color = C.MOTION_COLORS['gt_hist'][0], 
+            traj_ll[:, 1], traj_ll[:, 0], color = C.MOTION_COLORS['gt_hist'][0], 
             lw = C.MOTION_COLORS['gt_hist'][1]) 
 
         # Plot scored
@@ -325,7 +332,7 @@ def plot_scene_scores(
             ab = AnnotationBbox(img, (lon, lat), frameon = False) 
             axs[i+1].add_artist(ab)
             axs[i+1].scatter(
-                gt_traj_ll[:, 1], gt_traj_ll[:, 0], color=score, s = C.MOTION_COLORS['gt_hist'][1])
+                traj_ll[:, 1], traj_ll[:, 0], color=score, s = C.MOTION_COLORS['gt_hist'][1])
             axs[i+1].text(lon, lat, s=round(score_values[n], 2), color='black', fontsize='x-small')
             
     # Set figure bbox around the predicted trajectory
