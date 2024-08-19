@@ -20,7 +20,7 @@ STYLES = {
     'weight': 'bold',
 }
 
-OFFSET = 0.0073
+OFFSET = 0.008
 EPS = 1e-5
 
 COLOR_CODES = {

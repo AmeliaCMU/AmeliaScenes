@@ -56,11 +56,10 @@ def plot_scene(
         bench.plot_scene_benchmark(
             agents, assets, benchmark, tag=filetag, dpi=dpi, reproject=reproject)
     elif scene_type == 'benchmark_pred':
-        hist_len = scenario['hist_len']
         benchmark = scenario['benchmark']
         bench.plot_scene_benchmark_preds(
             agents, assets, benchmark, predictions, tag=filetag, dpi=dpi, reproject=reproject, 
-            hist_len=hist_len)
+            hist_len=scenario['hist_len'], ego_agent_ids=scenario['ego_agent_ids'])
     elif scene_type == 'strategy':
         raise NotImplementedError
         agent_order = scenario['meta']['agent_order']
@@ -131,68 +130,6 @@ def plot_scene_simple(
         # ax.axis([np.min(all_lon) - C.OFFSET, np.max(all_lon) + C.OFFSET, np.min(all_lat) - C.OFFSET, np.max(all_lat) + C.OFFSET])
     # axis(xmin, xmax, ymin, ymax)
     # ax.axis([west - C.OFFSET, east + C.OFFSET, south - C.OFFSET, north + C.OFFSET])
-
-    # Set figure bbox around the predicted trajectory
-    plt.subplots_adjust(left=0, right=1, top=1, bottom=0) 
-    plt.savefig(tag, dpi=dpi, bbox_inches='tight', pad_inches=0)
-    plt.close()
-
-def plot_scene_benchmark(
-    agents: Tuple, assets: Tuple, benchmark: dict = None, tag: str = 'temp.png', dpi=600, 
-    reproject: bool = False, projection: str = 'EPSG:3857'
-) -> None:
-    """ Visualizing benchmark scenes. Like 'plot_scene_simple' but adds benchmark metadata """
-    agent_sequences, agent_masks, agent_types, agent_ids = agents    
-    bkg, hold_lines, graph_nx, limits, agents = assets
-    north, east, south, west, z_min, z_max = limits
-    if reproject:
-        north, east, south, west = C.transform_extent(limits, C.MAP_CRS, projection)
-
-    fig, ax = plt.subplots()
-
-    # Display global map
-    ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.5) 
-    
-    agents_interest = benchmark['bench_agents']
-    halo_values = benchmark['timestep']
-    airport_name = benchmark['airport'].values[0]
-    date = benchmark['date'].values[0]
-    ax.set_title(f"{airport_name.upper()} ({date})")
-
-    traj_color, traj_lw = C.MOTION_COLORS['gt_hist'][0], C.MOTION_COLORS['gt_hist'][1]
-    zipped = zip(agent_sequences, agent_types, agent_masks, agent_ids)
-    for n, (trajectory, agent_type, mask, agent_id) in enumerate(zipped):
-    
-        traj = trajectory[mask]
-        if traj.shape[0] == 0:
-            continue
-        # Get heading at last point of trajectory history.
-        heading = traj[-1, 0]
-        traj_ll = C.reproject_sequences(traj[:, 1:], projection) if reproject else traj[:, 1:]
-        lon, lat = traj_ll[-1, 1], traj_ll[-1, 0]
-        if lon == 0 or lat == 0:
-            continue
-
-        # Plot agent icon on last point of sequence. If it's a benchmark agent add halo.
-        agent_type = int(agent_type)
-        icon = agents[agent_type]
-        img = C.plot_agent(icon, heading, zoom=C.ZOOM[agent_type])
-        if agent_id in agents_interest:
-            color = cm.autumn(halo_values) # '#F29C3A'
-            ax.scatter(lon, lat, color=color, alpha=C.MOTION_COLORS['ego_agent'][1], s = 160)        
-        ab = AnnotationBbox(img, (lon, lat), frameon = False) 
-        ax.add_artist(ab)
-
-        # Plot rest of the sequence
-        ax.plot(traj_ll[:, 1], traj_ll[:, 0], color=traj_color, lw=traj_lw) 
-    
-    # Plot movement
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines['top'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['right'].set_visible(False)
 
     # Set figure bbox around the predicted trajectory
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0) 

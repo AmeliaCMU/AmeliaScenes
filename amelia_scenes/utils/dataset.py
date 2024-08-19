@@ -45,6 +45,7 @@ def load_assets(input_dir: str, airport: str) -> Tuple:
     alt = ref_data.limits.Altitude
     espg = ref_data.espg_4326
     limits = (espg.north, espg.east, espg.south, espg.west, alt.min, alt.max)
+    ref_data = [ref_data.ref_lat, ref_data.ref_lon, ref_data.range_scale]
 
     # Agent assets
     agents = {
@@ -52,7 +53,7 @@ def load_assets(input_dir: str, airport: str) -> Tuple:
         common.VEHICLE: imageio.imread(os.path.join(assets_dir, "vc.png")),
         common.UNKNOWN: imageio.imread(os.path.join(assets_dir, "uk_ac.png"))
     }
-    return raster_map, hold_lines, graph_nx, limits, agents
+    return raster_map, hold_lines, graph_nx, (limits, ref_data), agents
 
 
 def load_data(airport: str, split: str, version: str = 'a10v08'):
