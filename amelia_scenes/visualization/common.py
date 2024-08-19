@@ -1,9 +1,13 @@
+import glob
 import numpy as np
+import os 
+
 from matplotlib.collections import LineCollection
 from matplotlib.offsetbox import OffsetImage
-from scipy import ndimage
+from natsort import natsorted
+from PIL import Image
 from pyproj import Transformer
-
+from scipy import ndimage
 
 # -------------------------------------------------------------------------------------------------#
 #                                   COMMON GLOBAL VARIABLES                                        #
@@ -29,6 +33,7 @@ COLOR_CODES = {
 
 MOTION_COLORS = {
     'gt_hist': ('#FF5A4C', 0.9 ),
+    'gt_hist_missing': ('#1289F3', 0.9),
     'gt_future': ('#8B5FBF', 0.9),
     'multimodal': ('#14F5B2', 1.0),
     'multi_modal': ((20/255, 245/255, 178/255), 1.0),
@@ -139,3 +144,13 @@ def reproject_sequences(sequence, target_projection):
     
     transformed_sequence = transformed_sequence.reshape((T,D))
     return transformed_sequence
+
+def to_gif(base_dir, scene_tag):
+    files = natsorted(glob.glob(f"{base_dir}/{scene_tag}*.png"))
+    imgs = [Image.open(f) for f in natsorted(glob.glob(f"{base_dir}/{scene_tag}*.png"))]
+    imgs[0].save(
+        f'{base_dir}/{scene_tag}.gif', format='GIF', append_images=imgs[1:], save_all=True,
+        duration=200, disposal=2, loop=0)
+    
+    for f in files:
+        os.remove(f)

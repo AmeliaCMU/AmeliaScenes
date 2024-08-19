@@ -226,7 +226,7 @@ class SceneProcessor:
         fs = fe - self.seq_len
         # frame_start, frame_end = fs, fe
         frame_start = max(fs - self.seq_extent * self.seq_len, frames[0])
-        frame_end = fe #min(fe + self.seq_extent * self.seq_len, frames[-1])
+        frame_end = min(fe + self.seq_extent * self.seq_len, frames[-1])
 
         frames = frames[frame_start:frame_end]
         frame_data = []
