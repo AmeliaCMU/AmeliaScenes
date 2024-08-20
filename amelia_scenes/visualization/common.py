@@ -1,13 +1,18 @@
 import glob
+import matplotlib.pyplot as plt
 import numpy as np
 import os 
 
+from matplotlib import cm
 from matplotlib.collections import LineCollection
-from matplotlib.offsetbox import OffsetImage
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from natsort import natsorted
 from PIL import Image
 from pyproj import Transformer
 from scipy import ndimage
+from typing import Tuple
+
+from amelia_scenes.utils import global_masks as G
 
 # -------------------------------------------------------------------------------------------------#
 #                                   COMMON GLOBAL VARIABLES                                        #
@@ -130,8 +135,13 @@ def transform_extent(extent, original_crs: str, target_crs: str):
     return (ymax_trans, xmax_trans, ymin_trans, xmin_trans)
 
 def reproject_sequences(sequence, target_projection):
-    lat = np.array(sequence[:,0::2])
-    lon = np.array(sequence[:,1::2])
+    if sequence.shape[0] > 1:
+        lat = np.array(sequence[:,0::2])
+        lon = np.array(sequence[:,1::2])
+    else:
+        lat = np.array(sequence[:, 0])
+        lon = np.array(sequence[:, 1])
+
     projector = Transformer.from_crs(MAP_CRS, target_projection)
     x, y = projector.transform(lat, lon)
     transformed_sequence = []
@@ -145,6 +155,114 @@ def reproject_sequences(sequence, target_projection):
     transformed_sequence = transformed_sequence.reshape((T,D))
     return transformed_sequence
 
+def save(
+    ax, filename: str = "temp.png", dpi: int = 200, clear_ticks: bool = True, 
+    force_extent: bool = False, limits: Tuple = None,
+) -> None:
+    if clear_ticks:
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines['top'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+    if force_extent:
+        xmin, xmax, ymin, ymax = limits
+        ax.axis([xmin - OFFSET, xmax + OFFSET, ymin - OFFSET, ymax + OFFSET])
+
+    # Set figure bbox around the predicted trajectory
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0) 
+    plt.savefig(filename, dpi=dpi, bbox_inches='tight', pad_inches=0)
+    plt.close()
+    
+def plot_sequences(
+    ax, scene: dict, agents: dict, agents_interest: list = [], halo_value: float = -1.0, 
+    reproject: bool = False, projection: str = 'EPSG:3857'
+) -> None:
+    agent_sequences, agent_masks = scene['agent_sequences'][:, :, G.HLL], scene['agent_masks']
+    agent_types, agent_ids = scene['agent_types'], scene['agent_ids']
+
+    # Display each trajectory
+    traj_color, traj_lw = MOTION_COLORS['gt_hist'][0], MOTION_COLORS['gt_hist'][1]
+    zipped = zip(agent_sequences, agent_types, agent_masks, agent_ids)
+    for n, (trajectory, agent_type, mask, agent_id) in enumerate(zipped):
+        traj = trajectory[mask]
+        if traj.shape[0] == 0:
+            continue
+
+        # Get heading at last point of trajectory history.
+        heading = traj[-1, 0] 
+        traj_ll = reproject_sequences(traj[:, 1:], projection) if reproject else traj[:, 1:]
+        lon, lat = traj_ll[-1, 1], traj_ll[-1, 0]
+        if lon == 0 or lat == 0:
+            continue
+
+        agent_type = int(agent_type)
+        # Place plane on last point of ground truth sequence
+        icon = agents[agent_type]
+        img = plot_agent(icon, heading, zoom=ZOOM[agent_type])
+        if agent_id in agents_interest:
+            color = '#F29C3A' if halo_value == -1.0 else cm.autumn(halo_value)
+            ax.scatter(lon, lat, color='#F29C3A', alpha=MOTION_COLORS['ego_agent'][1], s = 160)        
+        ab = AnnotationBbox(img, (lon, lat), frameon = False) 
+        ax.add_artist(ab)
+
+        ax.plot(traj_ll[:, 1], traj_ll[:, 0], color=traj_color, lw=traj_lw) 
+
+def plot_sequences_segmented(
+    ax, scene: dict, agents: dict, agents_interest: list = [], halo_value: float = -1.0, 
+    reproject: bool = False, projection: str = 'EPSG:3857'
+) -> None:
+    agent_sequences, agent_masks = scene['agent_sequences'][:, :, G.HLL], scene['agent_masks']
+    agent_types, agent_ids, hist_len = scene['agent_types'], scene['agent_ids'], scene['hist_len']
+
+    hist_color, hist_lw = MOTION_COLORS['gt_hist']
+    fut_color, fut_lw = MOTION_COLORS['gt_hist_missing']
+    fut_linestyle = 'dotted'
+
+    gt_hists, gt_futs = agent_sequences[:, :hist_len], agent_sequences[:, hist_len:]
+    zipped = zip(gt_hists, gt_futs, agent_types, agent_masks, agent_ids)
+    for n, (gt_hist, gt_fut, agent_type, mask, agent_id) in enumerate(zipped):
+
+        gt_hist, gt_fut = gt_hist[mask[:hist_len]], gt_fut[mask[hist_len:]]
+        
+        # This shouldn't even happen
+        if gt_hist.shape[0] == 0 and gt_fut.shape[0] == 0:
+            continue
+
+        # Plot History
+        if not gt_hist.shape[0] == 0:
+            fut_color, fut_lw = MOTION_COLORS['gt_future'][0], MOTION_COLORS['gt_future'][1]
+            fut_linestyle = 'dashed'
+
+            gt_hist_ll = reproject_sequences(
+                gt_hist[:, 1:], projection) if reproject else gt_hist[:, 1:]
+            ax.plot(gt_hist_ll[:, 1], gt_hist_ll[:, 0], color=hist_color, lw=hist_lw) 
+
+            # Plot Agent at Current Timestep (t=H) 
+            lon, lat, heading = gt_hist_ll[-1, 1], gt_hist_ll[-1, 0], gt_hist[-1, 0]
+            if lon == 0 or lat == 0:
+                continue
+
+            # Plot agent icon on last point of sequence. If it's a benchmark agent add halo.
+            agent_type = int(agent_type)
+            icon = agents[agent_type]
+            img = plot_agent(icon, heading, zoom=ZOOM[agent_type])
+            if agent_id in agents_interest:
+                color = cm.autumn(halo_value) # '#F29C3A'
+                ax.scatter(lon, lat, color=color, alpha=MOTION_COLORS['ego_agent'][1], s = 160)        
+            ab = AnnotationBbox(img, (lon, lat), frameon = False) 
+            ax.add_artist(ab)
+        
+        # Plot the future
+        if not gt_fut.shape[0] == 0:
+            gt_fut_ll = reproject_sequences(gt_fut[:, 1:], projection) if reproject else gt_fut[:, 1:]
+            ax.plot(gt_fut_ll[:, 1], gt_fut_ll[:, 0], color=fut_color, lw=fut_lw, linestyle=fut_linestyle) 
+
+        fut_color, fut_lw = MOTION_COLORS['gt_hist_missing']
+        fut_linestyle = 'dotted'
+
 def to_gif(base_dir, scene_tag):
     files = natsorted(glob.glob(f"{base_dir}/{scene_tag}*.png"))
     imgs = [Image.open(f) for f in natsorted(glob.glob(f"{base_dir}/{scene_tag}*.png"))]
@@ -153,4 +271,5 @@ def to_gif(base_dir, scene_tag):
         duration=200, disposal=2, loop=0)
     
     for f in files:
-        os.remove(f)
+        if not "coll" in f:
+            os.remove(f)
