@@ -129,7 +129,7 @@ def get_airport_files(airport: str, data_prep: dict):
 
     in_data_dir = os.path.join(data_prep.in_data_dir, airport)
     for fp in airport_files:
-        if len(fp.split('_')) == 3 and os.path.isdir(os.path.join(in_data_dir, fp)):
+        if os.path.isdir(os.path.join(in_data_dir, fp)):
             airport_files.append(os.path.join(airport, fp))
     airport_files = natsorted(airport_files)
 
