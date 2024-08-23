@@ -106,3 +106,11 @@ def impute(seq: pd.DataFrame, seq_len: int, imputed_flag: float = 1.0) -> pd.Dat
 def compute_dists_to_conflict_points(conflict_points, positions):
     dists = np.linalg.norm(conflict_points[:, None, None, :] - positions, axis=-1)
     return dists
+
+
+def get_available_airports(in_data_dir: str) -> list:
+    available_airports = []
+    for airport in SUPPORTED_AIRPORTS:
+        if os.path.isdir(os.path.join(in_data_dir, airport)):
+            available_airports.append(airport)
+    return available_airports

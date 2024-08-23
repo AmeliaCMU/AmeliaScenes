@@ -3,10 +3,10 @@ import os
 from easydict import EasyDict
 
 from amelia_scenes.utils import dataset
-from amelia_scenes.utils.common import SUPPORTED_AIRPORTS, ROOT_DIR
+import amelia_scenes.utils.common as C
 
 
-def run(base_dir: str, traj_version: str, split_type: str, seed: int) -> None:
+def run(base_dir: str, traj_version: str, split_type: str, airport: str, seed: int) -> None:
     traj_data_dir = f"traj_data_{traj_version}"
     config = EasyDict({
         "in_data_dir": os.path.join(base_dir, traj_data_dir, 'proc_full_scenes'),
@@ -29,9 +29,14 @@ def run(base_dir: str, traj_version: str, split_type: str, seed: int) -> None:
         },
     })
 
-    # get airport data
-    airport_list = [
-        airport for airport in SUPPORTED_AIRPORTS if os.path.exists(os.path.join(config.in_data_dir, airport))]
+    # get airport available list
+    airport_list = []
+    available_airports = C.get_available_airports(config.in_data_dir)
+    if args.airport != "all":
+        assert args.airport in available_airports, f"Airport {args.airport} not found in {config.in_data_dir}"
+        airport_list.append(args.airport)
+    else:
+        airport_list = available_airports
 
     if split_type == "random":
         # Will split data randomly. Simplest one, but potential data leakage.
@@ -48,11 +53,12 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--base_dir", type=str,
-                        default=f"{ROOT_DIR}/datasets/amelia")
+                        default=f"{C.ROOT_DIR}/datasets/amelia")
     parser.add_argument("--traj_version", type=str, default="a10v08")
     parser.add_argument("--split_type", default='random',
                         choices=['random', 'day', 'month'])
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--airport", type=str, default="all", choices=["all"] + C.SUPPORTED_AIRPORTS)
     args = parser.parse_args()
 
     run(**vars(args))
