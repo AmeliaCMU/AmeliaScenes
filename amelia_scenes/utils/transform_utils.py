@@ -57,14 +57,15 @@ def inv_transform(traj_rel: np.array, start_abs: np.array, theta: float) -> np.a
 
 
 def xy_to_ll(
-    traj_rel: tensor, start_abs_xy: tensor, start_heading: tensor, reference: Tuple, geodesic: Geodesic
+    traj_rel: tensor, start_abs_xy: tensor, start_heading: tensor, reference: Tuple, geodesic: Geodesic,
+    return_xyabs: bool = False
 ) -> np.array:
     """
 
     Inputs
     ------
         mu (tensor): tensor containing model's prediction in relative XY
-        hist_abs (tensor): tensor containing past trajectory in absolute XY
+        hist_abs (tensor): tensor containg past trajectory in absolute XY
         reference (Tuple): tuple containing the reference lat/lon points
         geodesic (Geodesic): geode for computing lat/lon
 
@@ -83,6 +84,8 @@ def xy_to_ll(
         lat, lon = direct_wrapper(geodesic, bearing, rang, reference[0], reference[1], reference[2])
         traj_ll[n, :, 1] = torch.tensor(lon)
         traj_ll[n, :, 0] = torch.tensor(lat)
+    if return_xyabs:
+        return traj_ll, torch.tensor(traj_xy_abs)
     return traj_ll
 
 
