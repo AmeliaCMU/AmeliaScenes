@@ -11,13 +11,13 @@ import amelia_scenes.visualization.common as C
 def plot_scene_marginal_fast(
         gt_history: np.array, gt_future: np.array, pred_trajectories: np.array, pred_scores: np.array,
         sigmas: np.array, maps: Tuple, ll_extent: Tuple, agent_types: np.array = None, tag: str = 'temp.png',
-        ego_id: int = 0, out_dir: str = './out', agents_interest: list = [], change_projection: bool = False, 
+        ego_id: int = 0, out_dir: str = './out', agents_interest: list = [], reproject: bool = False,
         projection: str = 'EPSG:3857') -> None:
     """ Tool for visualizing marginal model predictions for the ego-agent. """
     mm = C.MOTION_COLORS['multi_modal']
 
     north, east, south, west = ll_extent
-    if change_projection:
+    if reproject:
         new_projection = C.transform_extent(ll_extent, C.MAP_CRS, projection)
         north, east, south, west = new_projection
     fig, movement_plot = plt.subplots()
@@ -39,7 +39,7 @@ def plot_scene_marginal_fast(
 
         # Get heading at last point of trajectory history.
         gt_hist_ll, gt_heading = gt_hist[:, 1:], gt_hist[-1, 0]
-        if change_projection:
+        if reproject:
             gt_hist_ll = C.reproject_sequences(gt_hist_ll, projection)
             gt_fut = C.reproject_sequences(gt_fut, projection)
 
@@ -83,7 +83,7 @@ def plot_scene_marginal_fast(
                     s_p = sigmas_p[:, h, :]  # Positive sigma
                     s_n = sigmas_n[:, h, :]  # Negative sigma
 
-                    if change_projection:
+                    if reproject:
                         pred = C.reproject_sequences(pred, projection)
                         s_p = C.reproject_sequences(s_p, projection)
                         s_n = C.reproject_sequences(s_n, projection)
