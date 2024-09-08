@@ -119,6 +119,7 @@ def remove_blacklisted(blacklist: list, file_list: list):
 
 def get_airport_files(airport: str, data_prep: dict):
     """ Gets the airport data file list from the specified input directory and returns a random set.
+    Verifications are in place so it only takes scenes in place.
 
     Inputs
     ------
@@ -127,7 +128,11 @@ def get_airport_files(airport: str, data_prep: dict):
     """
 
     in_data_dir = os.path.join(data_prep.in_data_dir, airport)
-    airport_files = [os.path.join(airport, fp) for fp in os.listdir(in_data_dir)]
+
+    airport_files = []
+    for fp in os.listdir(in_data_dir):
+        if os.path.isdir(os.path.join(in_data_dir, fp)):
+            airport_files.append(os.path.join(airport, fp))
     airport_files = natsorted(airport_files)
 
     random.seed(data_prep.seed)
