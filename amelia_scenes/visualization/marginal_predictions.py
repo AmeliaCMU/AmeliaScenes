@@ -11,7 +11,7 @@ import amelia_scenes.visualization.common as C
 def plot_scene_marginal_fast(
         gt_history: np.array, gt_future: np.array, pred_trajectories: np.array, pred_scores: np.array,
         sigmas: np.array, maps: Tuple, ll_extent: Tuple, agent_types: np.array = None, tag: str = 'temp.png',
-        ego_id: int = 0, out_dir: str = './out', agents_interest: list = [], reproject: bool = False,
+        ego_id: int = 0, out_dir: str = './out', agents_interest: list = [], change_projection: bool = False,
         projection: str = 'EPSG:3857') -> None:
     """ Tool for visualizing marginal model predictions for the ego-agent. """
     mm = C.MOTION_COLORS['multi_modal']
@@ -32,9 +32,7 @@ def plot_scene_marginal_fast(
     # Iterate through agent in the scene
     all_lon, all_lat, scores = [], [], []
     sigmasn, sigmasp = sigmas[..., 0], sigmas[..., 1]
-
-    zipped = zip(gt_history, gt_future, pred_scores,
-                 pred_trajectories, sigmasn, sigmasp, agent_types)
+    zipped = zip(gt_history, gt_future, pred_scores, pred_trajectories, sigmasn, sigmasp, agent_types)
     for n, (gt_hist, gt_fut, hscores, preds, sigmas_p, sigmas_n, agent_type) in enumerate(zipped):
 
         # Get heading at last point of trajectory history.
