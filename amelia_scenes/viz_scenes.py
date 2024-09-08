@@ -19,12 +19,14 @@ def run(
     num_scenes: int, 
     perc: float, 
     benchmark: bool,
+    xplane: bool,
     scene_type: str,
     seed: int,
     dpi: int
 ):
     assets = load_assets(base_path, airport)
-    traj_data_dir = "traj_data_benchmark" if benchmark else f"traj_data_{traj_version}" 
+    tag = 'benchmark' if benchmark else 'xplane' if xplane else traj_version
+    traj_data_dir = f"traj_data_{tag}" 
 
     scenes_dir = os.path.join(base_path, traj_data_dir, 'proc_full_scenes', airport)
     scenes_subdirs = [os.path.join(scenes_dir, sdir) for sdir in os.listdir(scenes_dir)]
@@ -86,6 +88,9 @@ if __name__ == "__main__":
         help="Percentage of files to load (0.0, 1]. Alternative, use --num_scenes.")
     parser.add_argument(
         "--benchmark", 
+        action='store_true')
+    parser.add_argument(
+        "--xplane", 
         action='store_true')
     parser.add_argument(
         "--scene_type",

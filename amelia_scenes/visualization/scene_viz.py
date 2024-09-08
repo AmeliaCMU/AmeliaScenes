@@ -8,11 +8,24 @@ from amelia_scenes.visualization import scoring_viz as scoring
 from amelia_scenes.utils import global_masks as G
 
 SUPPORTED_SCENES_TYPES = [
-    'simple', 'benchmark', 'benchmark_pred', 'marginal_pred', 'joint_pred', 'features', 'scores', 
+    'simple', 
+    'benchmark', 
+    'benchmark_pred', 
+    'marginal_pred', 
+    'joint_pred', 
+    'features', 
+    'scores', 
     'strategy'
 ]
 
-def plot_scene(scene: dict, assets: Tuple, filename: str, scene_type: str, dpi: int = 200, **kwargs):
+def plot_scene(
+    scene: dict, 
+    assets: Tuple, 
+    filename: str, 
+    scene_type: str, 
+    dpi: int = 200, 
+    **kwargs
+):
     # predictions: Tuple = None,
     # scores: bool = False,
     # features_to_add: list = [],
@@ -39,7 +52,7 @@ def plot_scene(scene: dict, assets: Tuple, filename: str, scene_type: str, dpi: 
         bench.plot_scene_benchmark(scene, assets, benchmark, filename, dpi, reproject=reproject)
     elif scene_type == 'benchmark_pred':
         predictions = kwargs.get('predictions')
-        assert predictions, f"Predictions not provided" 
+        assert predictions, "Predictions not provided" 
         benchmark = scene['benchmark']
         bench.plot_scene_benchmark_predictions(
             scene, assets, benchmark, predictions, filename, dpi, reproject=reproject)

@@ -61,8 +61,7 @@ class SceneProcessor:
 
         self.n_jobs = config.jobs
 
-        limits_file = os.path.join(
-            config.assets_dir, self.airport, 'limits.json')
+        limits_file = os.path.join(config.assets_dir, self.airport, 'limits.json')
         with open(limits_file, 'r') as fp:
             self.ref_data = EasyDict(json.load(fp))
 
@@ -85,8 +84,7 @@ class SceneProcessor:
         self.data_files = [os.path.join(self.in_data_dir, f) for f in file_list if f.endswith('.csv')]
         random.seed(self.seed)
         random.shuffle(self.data_files)
-        self.data_files = self.data_files[:int(
-            len(self.data_files) * config.perc_process)]
+        self.data_files = self.data_files[:int(len(self.data_files) * config.perc_process)]
 
     def process_data(self) -> None:
         """ Processes the CSV data files containing airport trajectory information, creating shards
@@ -96,8 +94,6 @@ class SceneProcessor:
         generate scenarios for the specified conditions.
         """
         print(f"Processing data for airport {self.airport.upper()}.")
-
-        # TODO: validate self.parallel works
         if self.parallel:
             scenes = Parallel(n_jobs=self.n_jobs)(
                 delayed(self.process_file)(f) for f in tqdm(self.data_files))
@@ -219,16 +215,16 @@ class SceneProcessor:
         # Get the number of unique frames
         bench_file = os.path.join(self.bench_data_dir, base_name)
         bench = pd.read_csv(bench_file)
-
+    
         frames = data.Frame.unique().tolist()
         # fs, fe = bench.FrameStart.values[0], bench.FrameEnd.values[0]
         fe = bench.CollisionFrame.values[0]
         fs = fe - self.seq_len
-        # frame_start, frame_end = fs, fe
+        # # frame_start, frame_end = fs, fe
         frame_start = max(fs - self.seq_extent * self.seq_len, frames[0])
         frame_end = min(fe + self.seq_extent * self.seq_len, frames[-1])
-
         frames = frames[frame_start:frame_end]
+
         frame_data = []
         for frame_num in frames:
             frame = data[:][data.Frame == frame_num]
@@ -358,6 +354,8 @@ class SceneProcessor:
             # Scale altitude
             mx = self.ref_data.limits.Altitude.max
             mn = self.ref_data.limits.Altitude.min
+            # mx = 617.22 # meter norm
+            # mn = 116.77
             agent_seq[:, alt_idx] = (agent_seq[:, alt_idx] - mn) / (mx - mn)
 
             agent_id_list.append(int(agent_id))
@@ -380,6 +378,13 @@ class SceneProcessor:
                         valid = False
                         break
             valid_agent_list.append(valid)
+            
+            # NOTE: debugging xplane
+            heading = np.degrees(np.unwrap(np.radians(agent_seq[:, G.RAW_IDX.Heading].astype(float))))
+            # # heading_start = agent_seq[:, G.RAW_IDX.Heading].astype(float)
+            # # if not np.allclose(heading_start-heading, 0.0):
+            # #     breakpoint()
+            # agent_seq[:, G.RAW_IDX.Heading] = heading
 
             # TODO: debug impute
             # Impute missing data using linear interpolation

@@ -12,12 +12,15 @@ def run(
     parallel: bool,
     overwrite: bool,
     benchmark: bool,
+    xplane: bool,
     perc_process: float,
     to_process: str,
     seed: int,
     jobs: int
 ) -> None:
-    traj_data_dir = f"traj_data_benchmark" if benchmark else f"traj_data_{traj_version}"
+    assert not (benchmark and xplane)
+    tag = 'benchmark' if benchmark else 'xplane' if xplane else traj_version
+    traj_data_dir = f"traj_data_{tag}"
     bench_data_dir = os.path.join(base_dir, traj_data_dir, 'benchmark')
     add_scores_meta = False
     if to_process == 'scenes':
@@ -45,7 +48,7 @@ def run(
         "parallel": parallel,
         "perc_process": perc_process,
         'overwrite': overwrite,
-        "benchmark": benchmark,
+        "benchmark": benchmark | xplane,
         "add_scores_meta": add_scores_meta,
         "pred_lens": [20, 50],
         "hist_len": 10,
@@ -56,7 +59,7 @@ def run(
         "seed": seed,
         "jobs": jobs
     })
-
+ 
     Pr(config=config).process_data()
 
 
@@ -70,6 +73,7 @@ if __name__ == "__main__":
     parser.add_argument("--parallel", action='store_true')
     parser.add_argument("--overwrite", action='store_true')
     parser.add_argument("--benchmark", action='store_true')
+    parser.add_argument("--xplane", action='store_true')
     parser.add_argument("--perc_process", type=float, default=1.0)
     parser.add_argument("--to_process", default='all', choices=['scenes', 'metas', 'all'])
     parser.add_argument("--seed", type=int, default=42)

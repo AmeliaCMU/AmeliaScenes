@@ -126,13 +126,13 @@ def plot_scene_benchmark_predictions(
         if np.any(coll == 1.0):
             min_t = np.where(coll == 1.0)[0].min()# + hist_len
             plt.suptitle(f"Predicted Trajectories Collide from t={min_t}s", color="red")
-            tag += "_coll"
-            pred_i, pred_j = preds_ll[i, min_t], preds_ll[j, min_t]
-            pred_i = C.reproject_sequences(pred_i.unsqueeze(0), projection) if reproject else pred_i
+            filename += "_coll"
+            pred_i, pred_j = preds_ll[i, min_t].unsqueeze(0), preds_ll[j, min_t].unsqueeze(0)
+            pred_i = C.reproject_sequences(pred_i, projection) if reproject else pred_i
             ax.scatter(pred_i[:, 1], pred_i[:, 0], marker=(10, 1, 0), color='red', s = 70, zorder=10)
             ax.scatter(pred_i[:, 1], pred_i[:, 0], marker=(10, 1, 2), color='orange', s = 20, zorder=10)
             
-            pred_j = C.reproject_sequences(pred_j.unsqueeze(0), projection) if reproject else pred_j
+            pred_j = C.reproject_sequences(pred_j, projection) if reproject else pred_j
             ax.scatter(pred_j[:, 1], pred_j[:, 0], marker=(10, 1, 0), color='red', s = 70, zorder=10)
             ax.scatter(pred_j[:, 1], pred_j[:, 0], marker=(10, 1, 2), color='orange', s = 20, zorder=10)
             
