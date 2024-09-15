@@ -8,6 +8,8 @@ from amelia_scenes.visualization import scoring_viz as scoring
 from amelia_scenes.visualization import marginal_predictions as marginal
 from amelia_scenes.utils import global_masks as G
 
+
+# available scene visualization
 SUPPORTED_SCENES_TYPES = [
     'simple', 'benchmark', 'benchmark_pred', 'marginal_pred', 'joint_pred', 'features', 'scores',
     'strategy'
@@ -48,8 +50,10 @@ def plot_scene(scene: dict, assets: Tuple, filename: str, scene_type: str, dpi: 
     elif scene_type == 'marginal_pred':
         predictions = kwargs.get('predictions')
         assert predictions, f"Predictions not provided"
-        # TODO: Add support for marginal predictions modularize
-        marginal.plot_scene_marginal(scene, assets, predictions, filename, dpi, reproject=reproject)
+        plot_all = kwargs.get('plot_all')
+        assert plot_all, f"Plot all agents not provided"
+        marginal.plot_scene_marginal(
+            scene, assets, predictions, filename, dpi, reproject=reproject, plot_all=plot_all)
 
     else:
         raise NotImplementedError
