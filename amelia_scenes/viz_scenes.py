@@ -8,6 +8,7 @@ from tqdm import tqdm
 from amelia_scenes.utils.dataset import load_assets
 from amelia_scenes.utils.common import SUPPORTED_AIRPORTS, ROOT_DIR
 from amelia_scenes.visualization import scene_viz as viz
+from amelia_scenes.visualization.scene_viz import SUPPORTED_SCENES_TYPES
 
 SUBDIR = __file__.split('/')[-1].split('.')[0]
 
@@ -28,7 +29,10 @@ def run(
     traj_data_dir = "traj_data_benchmark" if benchmark else f"traj_data_{traj_version}"
 
     scenes_dir = os.path.join(base_path, traj_data_dir, 'proc_full_scenes', airport)
-    scenes_subdirs = [os.path.join(scenes_dir, sdir) for sdir in os.listdir(scenes_dir)]
+    scenes_subdirs = [
+        os.path.join(scenes_dir, sdir) for sdir in os.listdir(scenes_dir)
+        if os.path.isdir(os.path.join(scenes_dir, sdir))
+    ]
     scene_files = []
     for subdir in scenes_subdirs:
         scene_files += [os.path.join(subdir, f) for f in natsorted(os.listdir(subdir))]
@@ -92,7 +96,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--scene_type",
         default='simple',
-        choices=['simple', 'features', 'scores', 'strategy', 'marginal_pred'])
+        choices=SUPPORTED_SCENES_TYPES)
     parser.add_argument(
         "--seed",
         type=int,

@@ -16,8 +16,6 @@ from amelia_scenes.utils import global_masks as G
 from amelia_scenes.scoring.interactive import compute_collisions
 from amelia_scenes.utils.transform_utils import xy_to_ll
 
-SUPPORTED_SCENES_TYPES = ['simple', 'benchmark', 'benchmark_pred', 'features', 'scores', 'strategy']
-
 
 def plot_scene_benchmark(
     scene: dict, assets: Tuple, benchmark: dict, filename: str = 'temp.png', dpi=600,
@@ -36,12 +34,12 @@ def plot_scene_benchmark(
     ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.5)
 
     agents_interest = benchmark['bench_agents']
-    halo_value = benchmark['timestep']
+    halo_values = [benchmark['timestep']] * len(agents_interest)
     airport_name = benchmark['airport'].values[0]
     date = benchmark['date'].values[0]
     ax.set_title(f"{airport_name.upper()} ({date})")
 
-    C.plot_sequences(ax, scene, agents, agents_interest, halo_value=halo_value, reproject=reproject)
+    C.plot_sequences(ax, scene, agents, agents_interest, halo_values=halo_values, reproject=reproject)
     C.save(ax, filename, dpi, limits=[west, east, south, north], force_extent=True)
 
 
@@ -64,14 +62,14 @@ def plot_scene_benchmark_predictions(
 
     hist_len, ego_agent_ids = scene['hist_len'], scene['ego_agent_ids']
     agents_interest = benchmark['bench_agents']
-    halo_value = benchmark['timestep']
+    halo_values = [benchmark['timestep']] * len(agents_interest)
     airport_name = benchmark['airport'].values[0]
     date = benchmark['date'].values[0]
     plt.title(f"{airport_name.upper()} ({date})")
 
     # Plots sequences segmented as 'history', 'future' and 'future entering'
     C.plot_sequences_segmented(
-        ax, scene, agents, agents_interest, halo_value, reproject=reproject, projection=projection)
+        ax, scene, agents, agents_interest, halo_values, reproject=reproject, projection=projection)
 
     # NOTE: Plot the predictions. For now, this is too specific to benchmark requirements but should
     # modularize later
