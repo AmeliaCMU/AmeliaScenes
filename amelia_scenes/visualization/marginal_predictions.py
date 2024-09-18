@@ -8,10 +8,10 @@ from matplotlib import cm
 
 import amelia_scenes.visualization.common as C
 from amelia_scenes.utils import global_masks as G
+from amelia_scenes.utils.transform_utils import xy_to_ll
 
 import torch
 from geographiclib.geodesic import Geodesic
-from src.utils.transform_utils import xy_to_ll
 
 
 def plot_scene_marginal(
