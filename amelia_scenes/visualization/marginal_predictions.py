@@ -87,6 +87,8 @@ def plot_scene_marginal(
             sigma_n = xy_to_ll(mu_n, start_abs, start_heading, ref_data, geodesic)[agent_id]
 
             score = scores[agent_id, h].item()
+            score = score if not np.isnan(score) else 1.0
+
             pred = pred_ll[agent_id, hist_len:]
             sigma_p, sigma_n = sigma_p[hist_len:], sigma_n[hist_len:]
             if reproject:
