@@ -60,6 +60,8 @@ def compute_interactive_scores(
 # --------------------------------------------------------------------------------------------------
 # Interaction metric wrapper
 # --------------------------------------------------------------------------------------------------
+
+
 def compute_interactive_metrics(
     sequences: np.array,
     agent_types: np.array,
@@ -173,6 +175,7 @@ def compute_interactive_metrics(
 
     return EasyDict(metrics)
 
+
 def compute_collision_masks(
     sequences: np.array,
     agent_types: np.array,
@@ -192,7 +195,7 @@ def compute_collision_masks(
 
     agent_combinations = list(itertools.combinations(range(N), 2))
     status_init = np.asarray([Status.UNKNOWN for _ in agent_combinations])
-    
+
     metrics = {
         'status': status_init.copy(),
         'collisions': -np.inf * np.ones(shape=(N, N, T)),
@@ -200,10 +203,10 @@ def compute_collision_masks(
     }
 
     for n, (i, j) in enumerate(agent_combinations):
-        # Get the valid timesteps for an agent pair. Currently, invalid timesteps include: 
+        # Get the valid timesteps for an agent pair. Currently, invalid timesteps include:
         # interpolated points and padded points
 
-        #TODO: handle masks 
+        # TODO: handle masks
         mask_i, mask_j = agent_mask[i], agent_mask[j]
         mask = mask_i & mask_j
 
@@ -249,16 +252,18 @@ def compute_collision_masks(
         #                   airservicesaustralia.com/about-us/our-services/
         #                       how-air-traffic-control-works/separation-standards/
         # ------------------------------------------------------------------------------------------
-        coll = compute_collisions(
-            agent_i=agent_i, agent_j=agent_j, collision_threshold=separation_dist_thresh)
+        coll = compute_collisions(agent_i=agent_i, agent_j=agent_j, collision_threshold=separation_dist_thresh)
         metrics['collisions'][i, j, mask] = coll[mask]
+        metrics['collisions'][j, i, mask] = coll[mask]
 
         mttcp, mints, idx = compute_mttcp(
             agent_i=agent_i, agent_j=agent_j, dist_threshold=separation_dist_thresh)
         if not mints is None:
             metrics['mttcp'][i, j, mask] = mttcp[mask]
+            metrics['mttcp'][j, i, mask] = mttcp[mask]
 
         metrics['status'][n] = Status.OK
+
     return EasyDict(metrics)
 
 # --------------------------------------------------------------------------------------------------
@@ -428,6 +433,7 @@ def compute_agent_mttcp(
         return agents_mttcp.min(), min_ts[idx], i_idx[idx]
     return agents_mttcp, min_ts, i_idx
 
+
 def compute_agent_mttcp_(
     agent_i: Tuple,
     agent_j: Tuple,
@@ -453,13 +459,13 @@ def compute_agent_mttcp_(
     # T, 2 -> T, T
     dists = np.linalg.norm(pos_i[:, None, :] - pos_j, axis=-1)
     i_idx, j_idx = np.where(dists <= dist_threshold)
-    
+
     vals, i_unique = np.unique(i_idx, return_index=True)
     ii_idx = i_idx[i_unique]
     if len(ii_idx) == 0:
         mttcp = np.inf
         return mttcp, min_t, None
-    
+
     v_i = vel_i + eps
     v_j = vel_j + eps
 
@@ -487,6 +493,7 @@ def compute_agent_mttcp_(
         return mttcp.min(), min_t[idx], i_idx[idx]
     return mttcp, min_t, i_idx
 
+
 def compute_mttcp(
     agent_i: Tuple,
     agent_j: Tuple,
@@ -512,12 +519,12 @@ def compute_mttcp(
     # T, 2 -> T, T
     dists = np.linalg.norm(pos_i[:, None, :] - pos_j, axis=-1)
     i_idx, j_idx = np.where(dists <= dist_threshold)
-    
+
     vals, i_unique = np.unique(i_idx, return_index=True)
     ii_idx = i_idx[i_unique]
     if len(ii_idx) == 0:
         return mttcp, min_t, None
-    
+
     v_i = vel_i + eps
     v_j = vel_j + eps
 
@@ -548,6 +555,7 @@ def compute_mttcp(
 # --------------------------------------------------------------------------------------------------
 # NOTE: All below is unused for now but DO NOT DELETE.
 # --------------------------------------------------------------------------------------------------
+
 
 def compute_thw(
     agent_i: Tuple,
