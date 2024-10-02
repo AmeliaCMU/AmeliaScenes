@@ -1,12 +1,15 @@
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 
 from typing import Tuple
 
 from amelia_scenes.visualization import common as C
 from amelia_scenes.visualization import benchmark_viz as bench
 from amelia_scenes.visualization import scoring_viz as scoring
+from amelia_scenes.visualization import marginal_predictions as marginal
 from amelia_scenes.utils import global_masks as G
 
+
+# available scene visualization
 SUPPORTED_SCENES_TYPES = [
     'simple', 
     'benchmark', 
@@ -30,11 +33,11 @@ def plot_scene(
     # scores: bool = False,
     # features_to_add: list = [],
     # features: dict = {},
-    """ Wrapper for plotting scenes. 
+    """ Wrapper for plotting scenes.
 
     Inputs
     ------
-        scenario[dict]: dictionary containing the scene components. 
+        scenario[dict]: dictionary containing the scene components.
         assets[Tuple]: tuple containing all scene assets (e.g., map, graph, agent assets, etc.)
         filetag[str]: nametag for the image to save.
         features_to_add[list]: list of features to create subplots for.
@@ -42,7 +45,7 @@ def plot_scene(
         dpi[int]: image dpi to save.
     """
     assert scene_type in SUPPORTED_SCENES_TYPES, f"Scene type not supported {scene_type}"
-    
+
     reproject = True if scene['airport_id'] in ['panc', 'kmsy'] else False
     if scene_type == 'simple':
         agents = [] if kwargs.get('agents_interest') is None else kwargs.get('agents_interest')
@@ -52,30 +55,44 @@ def plot_scene(
         bench.plot_scene_benchmark(scene, assets, benchmark, filename, dpi, reproject=reproject)
     elif scene_type == 'benchmark_pred':
         predictions = kwargs.get('predictions')
+<<<<<<< HEAD
         assert predictions, "Predictions not provided" 
         # benchmark = scene['benchmark']
         benchmark = None
+=======
+        assert predictions, f"Predictions not provided"
+        benchmark = scene['benchmark']
+>>>>>>> f8e115779c088600bd03a8baa836ee9175f6a990
         bench.plot_scene_benchmark_predictions(
             scene, assets, benchmark, predictions, filename, dpi, reproject=reproject)
+    elif scene_type == 'marginal_pred':
+        predictions = kwargs.get('predictions')
+        assert predictions, f"Predictions not provided"
+        plot_all = kwargs.get('plot_all')
+        assert plot_all, f"Plot all agents not provided"
+        marginal.plot_scene_marginal(
+            scene, assets, predictions, filename, dpi, reproject=reproject, plot_all=plot_all)
+
     else:
         raise NotImplementedError
     # elif scene_type == 'strategy':
     #     raise NotImplementedError
     #     agent_order = scenario['meta']['agent_order']
     #     scoring.plot_scene_strategy(
-    #         agent_sequences, agent_order, assets, agent_masks, agent_types, agent_ids, tag=filetag, 
+    #         agent_sequences, agent_order, assets, agent_masks, agent_types, agent_ids, tag=filetag,
     #         dpi=dpi)
     # elif scene_type == 'scores':
     #     raise NotImplementedError
     #     agents_interest = benchmark['bench_agents']
     #     agent_scores = scenario['meta']['agent_scores'] if scores else None
     #     scoring.plot_scene_scores(
-    #         agent_sequences, agent_scores, assets, agent_masks, agent_types, agent_ids, tag=filetag, 
+    #         agent_sequences, agent_scores, assets, agent_masks, agent_types, agent_ids, tag=filetag,
     #         agents_interest=agents_interest, dpi=dpi)
     # else:
     #     raise NotImplementedError
     #     scoring.plot_scene_features(scenario, assets, filetag, features_to_add, features, dpi=dpi)
-    
+
+
 def plot_scene_simple(
     scene: dict, assets: Tuple, filename: str = 'temp.png', dpi=600, agents_interest: list = [],
     reproject: bool = False, projection: str = 'EPSG:3857'
@@ -90,7 +107,11 @@ def plot_scene_simple(
     fig, ax = plt.subplots()
 
     # Display global map
+<<<<<<< HEAD
     ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3) 
+=======
+    ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=.2)
+>>>>>>> f8e115779c088600bd03a8baa836ee9175f6a990
     C.plot_sequences(
         ax, scene, agents, agents_interest=agents_interest, reproject=reproject, projection=projection)
     C.save(ax, filename, dpi, limits=[west, east, south, north])
