@@ -11,22 +11,23 @@ from amelia_scenes.utils import global_masks as G
 
 # available scene visualization
 SUPPORTED_SCENES_TYPES = [
-    'simple', 
-    'benchmark', 
-    'benchmark_pred', 
-    'marginal_pred', 
-    'joint_pred', 
-    'features', 
-    'scores', 
+    'simple',
+    'benchmark',
+    'benchmark_pred',
+    'marginal_pred',
+    'joint_pred',
+    'features',
+    'scores',
     'strategy'
 ]
 
+
 def plot_scene(
-    scene: dict, 
-    assets: Tuple, 
-    filename: str, 
-    scene_type: str, 
-    dpi: int = 200, 
+    scene: dict,
+    assets: Tuple,
+    filename: str,
+    scene_type: str,
+    dpi: int = 200,
     **kwargs
 ):
     # predictions: Tuple = None,
@@ -55,14 +56,8 @@ def plot_scene(
         bench.plot_scene_benchmark(scene, assets, benchmark, filename, dpi, reproject=reproject)
     elif scene_type == 'benchmark_pred':
         predictions = kwargs.get('predictions')
-<<<<<<< HEAD
-        assert predictions, "Predictions not provided" 
-        # benchmark = scene['benchmark']
-        benchmark = None
-=======
         assert predictions, f"Predictions not provided"
         benchmark = scene['benchmark']
->>>>>>> f8e115779c088600bd03a8baa836ee9175f6a990
         bench.plot_scene_benchmark_predictions(
             scene, assets, benchmark, predictions, filename, dpi, reproject=reproject)
     elif scene_type == 'marginal_pred':
@@ -107,11 +102,9 @@ def plot_scene_simple(
     fig, ax = plt.subplots()
 
     # Display global map
-<<<<<<< HEAD
-    ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3) 
-=======
-    ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=.2)
->>>>>>> f8e115779c088600bd03a8baa836ee9175f6a990
+
+    ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3)
+
     C.plot_sequences(
         ax, scene, agents, agents_interest=agents_interest, reproject=reproject, projection=projection)
     C.save(ax, filename, dpi, limits=[west, east, south, north])
