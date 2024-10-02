@@ -58,14 +58,15 @@ def plot_scene_benchmark_predictions(
     fig, ax = plt.subplots()
 
     # Display global map
-    ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.5) 
+    ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3) 
     
     hist_len, ego_agent_ids = scene['hist_len'], scene['ego_agent_ids']
-    agents_interest = benchmark['bench_agents']
-    halo_value = benchmark['timestep']
-    airport_name = benchmark['airport'].values[0]
-    date = benchmark['date'].values[0]
-    plt.title(f"{airport_name.upper()} ({date})")
+    agents_interest, halo_value = [], 0.0
+    # agents_interest = benchmark['bench_agents']
+    # halo_value = benchmark['timestep']
+    # airport_name = benchmark['airport'].values[0]
+    # date = benchmark['date'].values[0]
+    # plt.title(f"{airport_name.upper()} ({date})")
 
     # Plots sequences segmented as 'history', 'future' and 'future entering'
     C.plot_sequences_segmented(
@@ -118,7 +119,8 @@ def plot_scene_benchmark_predictions(
 
     # TODO: resolve 3D collisions
     # Compute collision (Collision with full traj)
-    agent_combinations = list(itertools.combinations(range(N), 2))
+    # agent_combinations = list(itertools.combinations(range(N), 2))
+    agent_combinations = []
     for i, j in agent_combinations:
         agent_i = (preds_xy[i], None, None, None, None, None)
         agent_j = (preds_xy[j], None, None, None, None, None)

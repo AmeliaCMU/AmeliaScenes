@@ -253,6 +253,7 @@ def plot_sequences_segmented(
                 color = cm.autumn(halo_value) # '#F29C3A'
                 ax.scatter(lon, lat, color=color, alpha=MOTION_COLORS['ego_agent'][1], s = 160)        
             ab = AnnotationBbox(img, (lon, lat), frameon = False) 
+            # ax.text(lon, lat, scene['agent_ids'][n], fontsize=10)
             ax.add_artist(ab)
         
         # Plot the future

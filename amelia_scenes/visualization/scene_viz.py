@@ -53,7 +53,8 @@ def plot_scene(
     elif scene_type == 'benchmark_pred':
         predictions = kwargs.get('predictions')
         assert predictions, "Predictions not provided" 
-        benchmark = scene['benchmark']
+        # benchmark = scene['benchmark']
+        benchmark = None
         bench.plot_scene_benchmark_predictions(
             scene, assets, benchmark, predictions, filename, dpi, reproject=reproject)
     else:
@@ -89,7 +90,7 @@ def plot_scene_simple(
     fig, ax = plt.subplots()
 
     # Display global map
-    ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=.2) 
+    ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3) 
     C.plot_sequences(
         ax, scene, agents, agents_interest=agents_interest, reproject=reproject, projection=projection)
     C.save(ax, filename, dpi, limits=[west, east, south, north])
