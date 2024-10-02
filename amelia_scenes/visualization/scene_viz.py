@@ -6,13 +6,14 @@ from amelia_scenes.visualization import common as C
 from amelia_scenes.visualization import benchmark_viz as bench
 from amelia_scenes.visualization import scoring_viz as scoring
 from amelia_scenes.visualization import marginal_predictions as marginal
+from amelia_scenes.visualization import collision
 from amelia_scenes.utils import global_masks as G
 
 
 # available scene visualization
 SUPPORTED_SCENES_TYPES = [
     'simple', 'benchmark', 'benchmark_pred', 'marginal_pred', 'joint_pred', 'features', 'scores',
-    'strategy'
+    'strategy', 'collision'
 ]
 
 
@@ -54,6 +55,13 @@ def plot_scene(scene: dict, assets: Tuple, filename: str, scene_type: str, dpi: 
         assert plot_all, f"Plot all agents not provided"
         marginal.plot_scene_marginal(
             scene, assets, predictions, filename, dpi, reproject=reproject, plot_all=plot_all)
+    elif scene_type == 'collision':
+        predictions = kwargs.get('predictions')
+        assert predictions, f"Predictions not provided"
+        coll_threshold = kwargs.get('coll_threshold')
+        assert coll_threshold, f"Collision threshold not provided"
+        collision.plot_scene_collision(
+            scene, assets, predictions, filename, dpi, reproject=reproject, coll_threshold=coll_threshold)
 
     else:
         raise NotImplementedError
