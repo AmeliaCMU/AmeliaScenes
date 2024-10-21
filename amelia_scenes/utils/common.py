@@ -29,6 +29,8 @@ HOUR_TO_SECOND = 3600
 KMH_TO_MS = 1/3.6
 
 SUPPORTED_AIRPORTS = [
+    "katl",
+    "kbfi",
     "kbos",
     "kdca",
     "kewr",
