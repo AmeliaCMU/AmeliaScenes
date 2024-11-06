@@ -27,12 +27,8 @@ def run(
     dpi: int
 ):
     assets = load_assets(base_path, airport)
-<<<<<<< HEAD
     tag = 'benchmark' if benchmark else 'xplane' if xplane else traj_version
     traj_data_dir = f"traj_data_{tag}" 
-=======
-    traj_data_dir = "traj_data_benchmark" if benchmark else f"traj_data_{traj_version}"
->>>>>>> f8e115779c088600bd03a8baa836ee9175f6a990
 
     scenes_dir = os.path.join(base_path, traj_data_dir, 'proc_full_scenes', airport)
     scenes_subdirs = [
