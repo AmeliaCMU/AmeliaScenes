@@ -38,7 +38,13 @@ SUPPORTED_AIRPORTS = [
     "kmsy",
     "ksea",
     "ksfo",
-    "panc"
+    "panc",
+    "katl",
+    "kpit",
+    "kdfw",
+    "ksan",
+    "kcle",
+    "kmke"
 ]
 
 ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "../.."))

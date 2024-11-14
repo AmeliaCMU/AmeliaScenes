@@ -4,6 +4,7 @@ from easydict import EasyDict
 
 from amelia_scenes.utils.common import SUPPORTED_AIRPORTS, ROOT_DIR
 
+
 def run(
     airport: str,
     base_dir: str,
@@ -59,7 +60,7 @@ def run(
         "seed": seed,
         "jobs": jobs
     })
- 
+
     Pr(config=config).process_data()
 
 
