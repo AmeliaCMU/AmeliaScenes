@@ -18,7 +18,7 @@ from amelia_scenes.utils.common import WEIGHTS
 def pack_kinematic_metrics(
     metrics: dict,
     keys_to_pack: list = [
-        'waiting_period_L', 'waiting_period_C', 'acceleration_rate', 'deceleration_rate', 'speed', 
+        'waiting_period_L', 'waiting_period_C', 'acceleration_rate', 'deceleration_rate', 'speed',
         'jerk', 'traj_anomaly'],
     scale: float = 1000.0,
     eps: float = 1e-10
@@ -29,9 +29,9 @@ def pack_kinematic_metrics(
             continue
         if 'waiting_period' in k:
             T = np.asarray([t for t, d, i in v])
-            D = np.asarray([d + eps for t, d, i in v]) #* scale
+            D = np.asarray([d + eps for t, d, i in v])  # * scale
             m[k] = np.divide(T, D)
-        elif 'celeration' in k:
+        elif 'acceleration' in k:
             m[k] = np.asarray([a for a, i in v])
         else:
             m[k] = np.asarray(v)
@@ -71,7 +71,7 @@ def compute_kinematic_scores(
     acc_scores = metrics_df.acceleration_rate.clip(lower=0.0, upper=max_acc) / max_acc
     dec_scores = metrics_df.deceleration_rate.clip(lower=0.0, upper=max_acc) / max_acc
     ac_scores = acc_scores + dec_scores + acc_scores * dec_scores
-    
+
     # speed score
     speed_scores = metrics_df.speed.clip(lower=0.0, upper=max_speed) / max_speed
 
@@ -86,14 +86,14 @@ def compute_kinematic_scores(
         # scores[n] += (reward - penalty)
         # scores[m] += (reward - penalty)
         scores[n] += (
-            ac_scores[n] * wp_scores[m] + 
-            wp_scores[n] * ac_scores[m] - 
+            ac_scores[n] * wp_scores[m] +
+            wp_scores[n] * ac_scores[m] -
             wp_nm - (wp_scores[m] / (0.001 + speed_scores[n]))
         )
 
         scores[m] += (
-            ac_scores[m] * wp_scores[n] + 
-            wp_scores[m] * ac_scores[n] - 
+            ac_scores[m] * wp_scores[n] +
+            wp_scores[m] * ac_scores[n] -
             wp_nm - (wp_scores[n] / (0.001 + speed_scores[m]))
         )
     scores = scores + scores.min()
@@ -131,7 +131,7 @@ def compute_kinematic_metrics(sequences: np.array, hold_lines: np.array) -> dict
         ar, dr, acc = compute_acceleration_profile(speed)
         metrics['acceleration_rate'].append(ar)
         metrics['deceleration_rate'].append(dr)
-        
+
         jerk_max, jerk = compute_jerk(acc)
         metrics['jerk'].append(jerk_max)
 
@@ -155,7 +155,7 @@ def compute_waiting_period(
     # int_L, dist_L: longest interval and corresopnding distance
     # int_C, dist_C: interval with closest distance to a conflict point and corresponding distance
     wp_int_L, wp_dist_L, wp_idx_L = np.zeros(shape=1), np.inf * np.ones(shape=1), None
-    wp_int_C, wp_dist_C, wp_idx_C = np.zeros( shape=1), np.inf * np.ones(shape=1), None
+    wp_int_C, wp_dist_C, wp_idx_C = np.zeros(shape=1), np.inf * np.ones(shape=1), None
 
     dp = np.zeros(shape=sequence.shape[0])
     dp[1:] = np.linalg.norm(sequence[1:] - sequence[:-1], axis=-1)

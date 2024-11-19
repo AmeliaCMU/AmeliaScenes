@@ -4,6 +4,7 @@ from easydict import EasyDict
 
 from amelia_scenes.utils.common import SUPPORTED_AIRPORTS, ROOT_DIR
 
+
 def run(
     airport: str,
     base_dir: str,
@@ -29,8 +30,8 @@ def run(
         out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes')
     elif to_process == 'metas':
         from amelia_scenes.processing.scene_meta_processor import SceneMetaProcessor as Pr
-        in_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes')
-        out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes_meta')
+        in_data_dir = os.path.join(base_dir, traj_data_dir, 'raw_trajectories')
+        out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_metas_scenes')
     else:
         from amelia_scenes.processing.scene_processor import SceneProcessor as Pr
         add_scores_meta = True
@@ -59,7 +60,7 @@ def run(
         "seed": seed,
         "jobs": jobs
     })
- 
+
     Pr(config=config).process_data()
 
 
@@ -75,7 +76,7 @@ if __name__ == "__main__":
     parser.add_argument("--benchmark", action='store_true')
     parser.add_argument("--xplane", action='store_true')
     parser.add_argument("--perc_process", type=float, default=1.0)
-    parser.add_argument("--to_process", default='all', choices=['scenes', 'metas', 'all'])
+    parser.add_argument("--to_process", default='features', choices=['scenes', 'metas', 'all'])
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--jobs", type=int, default=-1)
     args = parser.parse_args()

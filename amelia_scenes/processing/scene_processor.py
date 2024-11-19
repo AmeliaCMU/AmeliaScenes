@@ -19,6 +19,7 @@ from amelia_scenes.scoring.kinematic import compute_kinematic_scores
 from amelia_scenes.scoring.interactive import compute_interactive_scores, compute_collision_masks
 from amelia_scenes.scoring.critical import compute_simple_scene_critical
 
+
 class SceneProcessor:
     """ Dataset class for pre-processing airport surface movement data into scenes. """
 
@@ -71,7 +72,7 @@ class SceneProcessor:
         with open(pickle_map_filepath, 'rb') as f:
             graph_pickle = pickle.load(f)
             self.hold_lines = graph_pickle['hold_lines']
-            
+
         self.blacklist = []
         blacklist_file = os.path.join(self.blacklist_dir, f"{self.airport}.txt")
         if os.path.exists(blacklist_file) and not self.overwrite:
@@ -127,7 +128,7 @@ class SceneProcessor:
         """
         if self.benchmark:
             return self.process_file_bench(f)
-            
+
         base_name = f.split('/')[-1]
         shard_name = base_name.split('.')[0]
         airport_id = base_name.split('_')[0].lower()
@@ -190,7 +191,7 @@ class SceneProcessor:
             blacklist.append(f.removeprefix(self.in_data_dir+'/'))
             os.rmdir(data_dir)
         return blacklist
-    
+
     def process_file_bench(self, f: str) -> Tuple[List, List, List, List, List, List]:
         """ Processes a single data file. It first obtains the number of possible sequences (given
         the parameters in the configuration file) and then generates scene-level pickle files with
@@ -215,7 +216,7 @@ class SceneProcessor:
         # Get the number of unique frames
         bench_file = os.path.join(self.bench_data_dir, base_name)
         bench = pd.read_csv(bench_file)
-    
+
         frames = data.Frame.unique().tolist()
         # fs, fe = bench.FrameStart.values[0], bench.FrameEnd.values[0]
         fe = bench.CollisionFrame.values[0]
@@ -235,7 +236,7 @@ class SceneProcessor:
         if num_sequences < 1:
             blacklist.append(f.removeprefix(self.in_data_dir+'/'))
             return blacklist
-        
+
         bench_agents = [int(agent) for agent in bench.AgentIDs.values[0].split(';')]
         benchmark = {
             'frame_start': fs,
@@ -262,7 +263,7 @@ class SceneProcessor:
             # Get agent array based on random and safety criteria
             num_agents, _, _ = seq.shape
 
-            # NOTE: 
+            # NOTE:
             #              -inf --> invalid data points (interp, padding)
             #              inf  --> invalid data points (not in conflict)
             #   any other value --> collision / time-to-conflict-point
@@ -378,7 +379,7 @@ class SceneProcessor:
                         valid = False
                         break
             valid_agent_list.append(valid)
-            
+
             # NOTE: debugging xplane
             heading = np.degrees(np.unwrap(np.radians(agent_seq[:, G.RAW_IDX.Heading].astype(float))))
             # # heading_start = agent_seq[:, G.RAW_IDX.Heading].astype(float)
@@ -413,12 +414,12 @@ class SceneProcessor:
 
         Inputs:
         -------
-            scene[dict]: dictionary containing agent sequences and meta information. 
+            scene[dict]: dictionary containing agent sequences and meta information.
 
         Outputs:
         --------
-            scores[dict]: dictionary containing individual and interactive scores for each agent, 
-            and scene scores. 
+            scores[dict]: dictionary containing individual and interactive scores for each agent,
+            and scene scores.
         """
         crowd_scene_score = compute_simple_scene_crowdedness(scene, self.max_agents)
         kin_agents_scores, kin_scene_score = compute_kinematic_scores(scene, self.hold_lines)
@@ -427,7 +428,7 @@ class SceneProcessor:
             agent_scores_list=[kin_agents_scores, int_agents_scores],
             scene_score_list=[crowd_scene_score, kin_scene_score, int_scene_score]
         )
-        return  {
+        return {
             'agent_scores': {
                 'kinematic': kin_agents_scores,
                 'interactive': int_agents_scores,

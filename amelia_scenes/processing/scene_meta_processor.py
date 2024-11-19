@@ -1,6 +1,7 @@
 import json
 import os
 import pickle
+import random
 
 import amelia_scenes.utils.common as C
 
@@ -13,6 +14,7 @@ from amelia_scenes.scoring.crowdedness import compute_simple_scene_crowdedness
 from amelia_scenes.scoring.kinematic import compute_kinematic_scores
 from amelia_scenes.scoring.interactive import compute_interactive_scores
 from amelia_scenes.scoring.critical import compute_simple_scene_critical
+
 
 class SceneMetaProcessor:
     """ Dataset class for pre-processing meta data for airport surface movement scenes. Assumes that
@@ -32,6 +34,8 @@ class SceneMetaProcessor:
         self.in_data_dir = os.path.join(config.in_data_dir, self.airport)
         self.out_data_dir = os.path.join(config.out_data_dir, self.airport)
         os.makedirs(self.out_data_dir, exist_ok=True)
+        self.blacklist_dir = os.path.join(config.out_data_dir, 'blacklist')
+        os.makedirs(self.blacklist_dir, exist_ok=True)
 
         self.parallel = config.parallel
         self.overwrite = config.overwrite
@@ -59,13 +63,28 @@ class SceneMetaProcessor:
             graph_pickle = pickle.load(f)
             self.hold_lines = graph_pickle['hold_lines']
 
-        # NOTE: there is a scenario folder for each CSV file that was processed.
-        self.data_files = []
-        for _dir in os.listdir(self.in_data_dir):
-            data_dir = os.path.join(self.in_data_dir, _dir)
-            self.data_files += [os.path.join(data_dir, f) for f in os.listdir(data_dir)]
-            out_data_dir = os.path.join(self.out_data_dir, _dir)
-            os.makedirs(out_data_dir, exist_ok=True)
+        self.blacklist = []
+        blacklist_file = os.path.join(self.blacklist_dir, f"{self.airport}.txt")
+        if os.path.exists(blacklist_file) and not self.overwrite:
+            with open(blacklist_file, 'r') as f:
+                self.blacklist = f.read().splitlines()
+
+        file_list = os.listdir(self.in_data_dir)
+        for duplicate in list(set(self.blacklist) & set(file_list)):
+            file_list.remove(duplicate)
+        self.data_files = [os.path.join(self.in_data_dir, f) for f in file_list if f.endswith('.csv')]
+        random.seed(self.seed)
+        random.shuffle(self.data_files)
+        self.data_files = self.data_files[:int(len(self.data_files) * config.perc_process)]
+
+        # # NOTE: there is a scenario folder for each CSV file that was processed.
+        # self.data_files = []
+        # breakpoint()
+        # for _dir in os.listdir(self.in_data_dir):
+        #     data_dir = os.path.join(self.in_data_dir, _dir)
+        #     self.data_files += [os.path.join(data_dir, f) for f in os.listdir(data_dir)]
+        #     out_data_dir = os.path.join(self.out_data_dir, _dir)
+        #     os.makedirs(out_data_dir, exist_ok=True)
         print(f"Processing meta data for airport {self.airport.upper()}.")
 
     def process_data(self) -> None:
