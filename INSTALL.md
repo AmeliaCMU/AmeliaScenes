@@ -1,5 +1,18 @@
 # Amelia Framework
 
+## Install Script (recommended)
+
+### Prerequisites
+
+To install the Amelia framework using the provided bash script, make it executable and run, specifying the desired environment name. Make sure to have conda installed, as well as GitHub configured with a [SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) for cloning.
+
+```bash
+chmod +x ./install.sh
+./install.sh ameliacmu
+```
+
+This will clone the necessary repos for using the Amelia framework and install them as Python Packages in a conda environment; as well as installing the requiered dependencies.
+
 ## Manual Installation
 
 Installation can be done by installing the AmeliaScenes repository or the complete Amelia Framework
