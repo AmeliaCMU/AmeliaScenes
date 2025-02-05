@@ -2,7 +2,7 @@ import os
 
 from easydict import EasyDict
 
-from amelia_scenes.utils.common import SUPPORTED_AIRPORTS, ROOT_DIR
+import amelia_scenes.utils.common as C
 
 
 def run(
@@ -67,8 +67,8 @@ def run(
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--airport", type=str, default="kbos", choices=['all'] + SUPPORTED_AIRPORTS)
-    parser.add_argument("--base_dir", type=str, default=f"{ROOT_DIR}/datasets/amelia")
+    parser.add_argument("--airport", type=str, default="kbos", choices=['all'] + C.SUPPORTED_AIRPORTS)
+    parser.add_argument("--base_dir", type=str, default=f"{C.ROOT_DIR}/datasets/amelia")
     parser.add_argument("--traj_version", type=str, default="a10v08")
     parser.add_argument("--graph_version", type=str, default="a10v01os")
     parser.add_argument("--parallel", action='store_true')
@@ -82,8 +82,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.airport == 'all':
-        for airport in SUPPORTED_AIRPORTS:
-            args = vars(args)
+        args = vars(args)
+        for airport in C.SUPPORTED_AIRPORTS:
             args['airport'] = airport
             run(**args)
     else:
