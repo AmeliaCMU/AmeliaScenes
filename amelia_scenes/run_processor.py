@@ -67,7 +67,7 @@ def run(
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--airport", type=str, default="kbos", choices=SUPPORTED_AIRPORTS)
+    parser.add_argument("--airport", type=str, default="kbos", choices=['all'] + SUPPORTED_AIRPORTS)
     parser.add_argument("--base_dir", type=str, default=f"{ROOT_DIR}/datasets/amelia")
     parser.add_argument("--traj_version", type=str, default="a10v08")
     parser.add_argument("--graph_version", type=str, default="a10v01os")
@@ -80,4 +80,11 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--jobs", type=int, default=-1)
     args = parser.parse_args()
-    run(**vars(args))
+
+    if args.airport == 'all':
+        for airport in SUPPORTED_AIRPORTS:
+            args = vars(args)
+            args['airport'] = airport
+            run(**args)
+    else:
+        run(**vars(args))
