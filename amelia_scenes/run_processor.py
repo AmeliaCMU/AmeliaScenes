@@ -82,9 +82,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.airport == 'all':
-        args = vars(args)
+        kargs = vars(args)
         for airport in C.SUPPORTED_AIRPORTS:
-            args['airport'] = airport
-            run(**args)
+            kargs['airport'] = airport
+            run(**kargs)
     else:
         run(**vars(args))
