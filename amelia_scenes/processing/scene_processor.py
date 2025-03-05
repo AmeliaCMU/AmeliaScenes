@@ -388,9 +388,9 @@ class SceneProcessor:
 
             # Exclude trajectories less then seq_len
             # TODO uncomment after processing kdca
-            # if not self.add_padd and (pad_end - pad_front != self.seq_len):
-            #     print(f"Agent {agent_id} trajectory length {pad_end - pad_front} less than seq_len.")
-            #     continue
+            if not self.add_padd and (pad_end - pad_front != self.seq_len):
+                # print(f"Agent {agent_id} trajectory length {pad_end - pad_front} less than seq_len.")
+                continue
             # Scale altitude
             mx = self.ref_data.limits.Altitude.max
             mn = self.ref_data.limits.Altitude.min
