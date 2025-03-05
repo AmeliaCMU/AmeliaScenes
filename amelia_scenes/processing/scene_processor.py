@@ -130,8 +130,9 @@ class SceneProcessor:
         ------
             f[str]: name of the file to shard.
         """
-        if self.benchmark:
-            return self.process_file_bench(f)
+        # TODO: uncoment after processing kdca
+        # if self.benchmark:
+        #     return self.process_file_bench(f)
 
         base_name = f.split('/')[-1]
         shard_name = base_name.split('.')[0]
@@ -175,11 +176,7 @@ class SceneProcessor:
         tmp_df["geometry"] = tmp_df["geometry"].apply(polygon.contains)
         tmp_df = tmp_df[tmp_df["geometry"] == True]
         del tmp_df["geometry"]
-        # if tmp_df.empty:
-        #     print(f"Error: DataFrame is empty! Fence: {polygon_num}")
-        #     continue
-        # data = data[data.Altitude >= 100]
-        # data = data[data.Altitude <= 1000]
+
         data = tmp_df
 
         # Get the number of unique frames
@@ -368,7 +365,6 @@ class SceneProcessor:
         unique_agents = np.unique(seq_data[:, G.RAW_IDX.ID])
         num_agents = len(unique_agents)
         if not self.benchmark and (num_agents < self.min_agents or num_agents > self.max_agents):
-            print(f"Number of agents {num_agents} out of bounds.")
             return none_outs
 
         num_agents_considered = 0
@@ -391,10 +387,10 @@ class SceneProcessor:
             pad_end = frames.index(agent_seq[-1, 0]) - seq_idx + 1
 
             # Exclude trajectories less then seq_len
-            if not self.add_padd and (pad_end - pad_front != self.seq_len):
-                print(f"Agent {agent_id} has less than {self.seq_len} frames. {pad_end - pad_front}")
-                continue
-
+            # TODO uncomment after processing kdca
+            # if not self.add_padd and (pad_end - pad_front != self.seq_len):
+            #     print(f"Agent {agent_id} trajectory length {pad_end - pad_front} less than seq_len.")
+            #     continue
             # Scale altitude
             mx = self.ref_data.limits.Altitude.max
             mn = self.ref_data.limits.Altitude.min
@@ -443,12 +439,10 @@ class SceneProcessor:
         # Return Nones if there aren't any valid agents
         valid_agent_list = np.asarray(valid_agent_list)
         if valid_agent_list.sum() == 0:
-            print(f"No valid agents in sequence {seq_idx}.")
             return none_outs
 
         # Return Nones if the number of considered agents is less than the required
         if num_agents_considered < self.min_agents:
-            print(f"Number of agents {num_agents_considered} less than {self.min_agents}.")
             return none_outs
 
         return seq[:num_agents_considered], agent_id_list, agent_type_list, valid_agent_list, \
