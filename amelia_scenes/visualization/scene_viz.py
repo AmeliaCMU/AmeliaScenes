@@ -105,6 +105,17 @@ def plot_scene_simple(
 
     ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3)
 
+    # traj = scene['agent_sequences'][:, :, G.HLL]
+    # plot_seq = False
+    # print((traj[:, :, 2] > east).any() or (traj[:, :, 1] > south).any())
+    # if (traj[:, :, 2] > east).any() and (traj[:, :, 1] < south).any() and (traj[:, :, 2] < west).any() and (traj[:, :, 1] < south).any():
+    #     plot_seq = True
+
+    # if not plot_seq:
+    #     print("No agents in scene")
+    #     return
+
     C.plot_sequences(
         ax, scene, agents, agents_interest=agents_interest, reproject=reproject, projection=projection)
-    C.save(ax, filename, dpi, limits=[west, east, south, north])
+    # C.save(ax, filename, dpi, limits=[west, east, south, north])
+    C.save(ax, filename, dpi)

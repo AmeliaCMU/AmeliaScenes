@@ -19,6 +19,10 @@ from amelia_scenes.scoring.kinematic import compute_kinematic_scores
 from amelia_scenes.scoring.interactive import compute_interactive_scores, compute_collision_masks
 from amelia_scenes.scoring.critical import compute_simple_scene_critical
 
+from shapely.geometry.polygon import Polygon
+from shapely.geometry import Point
+
+
 class SceneProcessor:
     """ Dataset class for pre-processing airport surface movement data into scenes. """
 
@@ -57,6 +61,7 @@ class SceneProcessor:
         self.skip = config.skip
         self.min_agents = config.min_agents
         self.max_agents = config.max_agents
+
         self.min_valid_points = config.min_valid_points
 
         self.n_jobs = config.jobs
@@ -71,7 +76,7 @@ class SceneProcessor:
         with open(pickle_map_filepath, 'rb') as f:
             graph_pickle = pickle.load(f)
             self.hold_lines = graph_pickle['hold_lines']
-            
+
         self.blacklist = []
         blacklist_file = os.path.join(self.blacklist_dir, f"{self.airport}.txt")
         if os.path.exists(blacklist_file) and not self.overwrite:
@@ -127,7 +132,7 @@ class SceneProcessor:
         """
         if self.benchmark:
             return self.process_file_bench(f)
-            
+
         base_name = f.split('/')[-1]
         shard_name = base_name.split('.')[0]
         airport_id = base_name.split('_')[0].lower()
@@ -139,6 +144,43 @@ class SceneProcessor:
 
         # Otherwise, shard the file and add it to the scenario list.
         data = pd.read_csv(f)
+        lons_lats_vect = [
+            [38.84042745, -77.04279827],
+            [38.84015514, -77.04089208],
+            [38.84124439, -77.03707969],
+            [38.83971263, -77.03381193],
+            [38.84832454, -77.0310888],
+            [38.84995842, -77.03163343],
+            [38.86030632, -77.03789663],
+            [38.86085095, -77.03871357],
+            [38.86221252, -77.04307059],
+            [38.86085095, -77.04470447],
+            [38.87364968, -77.0637664],
+            [38.88705919, -77.04412885],
+            [38.8852731, -77.02537489],
+            [38.87669986, -77.00912145],
+            [38.85598119, -77.004299],
+            [38.83225805, -77.00494672],
+            [38.80829447, -76.9924203],
+            [38.79631269, -77.03353962],
+            [38.82572253, -77.04497678],
+            [38.83225805, -77.04388753],
+            [38.84042745, -77.04279827]
+        ]
+
+        polygon = Polygon(lons_lats_vect)
+
+        tmp_df = data.copy()
+        tmp_df["geometry"] = [Point(xy) for xy in zip(tmp_df["Lat"], tmp_df["Lon"])]
+        tmp_df["geometry"] = tmp_df["geometry"].apply(polygon.contains)
+        tmp_df = tmp_df[tmp_df["geometry"] == True]
+        del tmp_df["geometry"]
+        # if tmp_df.empty:
+        #     print(f"Error: DataFrame is empty! Fence: {polygon_num}")
+        #     continue
+        # data = data[data.Altitude >= 100]
+        # data = data[data.Altitude <= 1000]
+        data = tmp_df
 
         # Get the number of unique frames
         frames = data.Frame.unique().tolist()
@@ -190,7 +232,7 @@ class SceneProcessor:
             blacklist.append(f.removeprefix(self.in_data_dir+'/'))
             os.rmdir(data_dir)
         return blacklist
-    
+
     def process_file_bench(self, f: str) -> Tuple[List, List, List, List, List, List]:
         """ Processes a single data file. It first obtains the number of possible sequences (given
         the parameters in the configuration file) and then generates scene-level pickle files with
@@ -215,7 +257,7 @@ class SceneProcessor:
         # Get the number of unique frames
         bench_file = os.path.join(self.bench_data_dir, base_name)
         bench = pd.read_csv(bench_file)
-    
+
         frames = data.Frame.unique().tolist()
         # fs, fe = bench.FrameStart.values[0], bench.FrameEnd.values[0]
         fe = bench.CollisionFrame.values[0]
@@ -235,7 +277,7 @@ class SceneProcessor:
         if num_sequences < 1:
             blacklist.append(f.removeprefix(self.in_data_dir+'/'))
             return blacklist
-        
+
         bench_agents = [int(agent) for agent in bench.AgentIDs.values[0].split(';')]
         benchmark = {
             'frame_start': fs,
@@ -262,7 +304,7 @@ class SceneProcessor:
             # Get agent array based on random and safety criteria
             num_agents, _, _ = seq.shape
 
-            # NOTE: 
+            # NOTE:
             #              -inf --> invalid data points (interp, padding)
             #              inf  --> invalid data points (not in conflict)
             #   any other value --> collision / time-to-conflict-point
@@ -326,6 +368,7 @@ class SceneProcessor:
         unique_agents = np.unique(seq_data[:, G.RAW_IDX.ID])
         num_agents = len(unique_agents)
         if not self.benchmark and (num_agents < self.min_agents or num_agents > self.max_agents):
+            print(f"Number of agents {num_agents} out of bounds.")
             return none_outs
 
         num_agents_considered = 0
@@ -349,6 +392,7 @@ class SceneProcessor:
 
             # Exclude trajectories less then seq_len
             if not self.add_padd and (pad_end - pad_front != self.seq_len):
+                print(f"Agent {agent_id} has less than {self.seq_len} frames. {pad_end - pad_front}")
                 continue
 
             # Scale altitude
@@ -378,7 +422,7 @@ class SceneProcessor:
                         valid = False
                         break
             valid_agent_list.append(valid)
-            
+
             # NOTE: debugging xplane
             heading = np.degrees(np.unwrap(np.radians(agent_seq[:, G.RAW_IDX.Heading].astype(float))))
             # # heading_start = agent_seq[:, G.RAW_IDX.Heading].astype(float)
@@ -399,10 +443,12 @@ class SceneProcessor:
         # Return Nones if there aren't any valid agents
         valid_agent_list = np.asarray(valid_agent_list)
         if valid_agent_list.sum() == 0:
+            print(f"No valid agents in sequence {seq_idx}.")
             return none_outs
 
         # Return Nones if the number of considered agents is less than the required
         if num_agents_considered < self.min_agents:
+            print(f"Number of agents {num_agents_considered} less than {self.min_agents}.")
             return none_outs
 
         return seq[:num_agents_considered], agent_id_list, agent_type_list, valid_agent_list, \
@@ -413,12 +459,12 @@ class SceneProcessor:
 
         Inputs:
         -------
-            scene[dict]: dictionary containing agent sequences and meta information. 
+            scene[dict]: dictionary containing agent sequences and meta information.
 
         Outputs:
         --------
-            scores[dict]: dictionary containing individual and interactive scores for each agent, 
-            and scene scores. 
+            scores[dict]: dictionary containing individual and interactive scores for each agent,
+            and scene scores.
         """
         crowd_scene_score = compute_simple_scene_crowdedness(scene, self.max_agents)
         kin_agents_scores, kin_scene_score = compute_kinematic_scores(scene, self.hold_lines)
@@ -427,7 +473,7 @@ class SceneProcessor:
             agent_scores_list=[kin_agents_scores, int_agents_scores],
             scene_score_list=[crowd_scene_score, kin_scene_score, int_scene_score]
         )
-        return  {
+        return {
             'agent_scores': {
                 'kinematic': kin_agents_scores,
                 'interactive': int_agents_scores,
