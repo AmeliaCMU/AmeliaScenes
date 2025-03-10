@@ -7,7 +7,7 @@ __pycache__/
 *.so
 *amelia_scenes/todo/**
 *datasets/**
-*out/**
+out
 *amelia_scenes/run_individual.py
 *amelia_scenes/run_interaction.py
 *amelia_scenes/run_all.py
