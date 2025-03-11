@@ -200,6 +200,9 @@ class SceneProcessor:
         ------
             f[str]: name of the file to shard.
         """
+        # if "KDCA_1_1738200600" in f:
+        #     breakpoint()
+
         base_name = f.split('/')[-1]
         shard_name = base_name.split('.')[0]
         airport_id = base_name.split('_')[0].lower()

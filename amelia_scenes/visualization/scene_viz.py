@@ -56,15 +56,16 @@ def plot_scene(
         bench.plot_scene_benchmark(scene, assets, benchmark, filename, dpi, reproject=reproject)
     elif scene_type == 'benchmark_pred':
         predictions = kwargs.get('predictions')
-        assert predictions, f"Predictions not provided"
+        assert predictions, "Predictions not provided" 
         benchmark = scene['benchmark']
+        # benchmark = None
         bench.plot_scene_benchmark_predictions(
             scene, assets, benchmark, predictions, filename, dpi, reproject=reproject)
     elif scene_type == 'marginal_pred':
         predictions = kwargs.get('predictions')
-        assert predictions, f"Predictions not provided"
+        assert predictions, "Predictions not provided"
         plot_all = kwargs.get('plot_all')
-        assert plot_all, f"Plot all agents not provided"
+        assert plot_all, "Plot all agents not provided"
         marginal.plot_scene_marginal(
             scene, assets, predictions, filename, dpi, reproject=reproject, plot_all=plot_all)
 
@@ -100,11 +101,15 @@ def plot_scene_simple(
         north, east, south, west = C.transform_extent(limits, C.MAP_CRS, projection)
 
     fig, ax = plt.subplots()
-
+    # breakpoint()
     # Display global map
+<<<<<<< Updated upstream
 
     ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3)
 
+=======
+    ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3) 
+>>>>>>> Stashed changes
     C.plot_sequences(
         ax, scene, agents, agents_interest=agents_interest, reproject=reproject, projection=projection)
-    C.save(ax, filename, dpi, limits=[west, east, south, north])
+    C.save(ax, filename, dpi)#, limits=[west, east, south, north])
