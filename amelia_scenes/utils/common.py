@@ -11,6 +11,7 @@ np.set_printoptions(suppress=True)
 pd.options.mode.chained_assignment = None
 
 # TODO: same as the global_masks.py, avoid copying these global variables to each module.
+OTHER = -1
 AIRCRAFT = 0
 VEHICLE = 1
 UNKNOWN = 2

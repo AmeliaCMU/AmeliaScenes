@@ -48,7 +48,7 @@ MOTION_COLORS = {
     'interest_agent': ('#F29C3A', 0.5),
     'other_agent': ('#F29C3A', 0.0),
 }
-
+OTHER = -1
 AIRCRAFT = 0
 VEHICLE = 1
 UNKNOWN = 2
@@ -59,6 +59,7 @@ HOUR_TO_SECOND = 3600
 KMH_TO_MS = 1/3.6
 
 ZOOM = {
+    OTHER: 0.025,
     AIRCRAFT: 0.015,
     VEHICLE: 0.2,
     UNKNOWN: 0.015
@@ -273,9 +274,10 @@ def plot_sequences_segmented(
             icon = agents[agent_type]
             img = plot_agent(icon, heading, zoom=ZOOM[agent_type])
             if agent_id in agents_interest:
-                color = cm.autumn(halo_value) # '#F29C3A'
-                ax.scatter(lon, lat, color=color, alpha=MOTION_COLORS['ego_agent'][1], s = 160)        
-            ab = AnnotationBbox(img, (lon, lat), frameon = False) 
+                # color = cm.autumn(halo_value) # '#F29C3A'
+                color = '#F29C3A'
+                ax.scatter(lon, lat, color=color, alpha=MOTION_COLORS['ego_agent'][1], s=160)
+            ab = AnnotationBbox(img, (lon, lat), frameon=False)
             # ax.text(lon, lat, scene['agent_ids'][n], fontsize=10)
             ax.add_artist(ab)
 

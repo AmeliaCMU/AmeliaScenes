@@ -51,7 +51,8 @@ def load_assets(input_dir: str, airport: str) -> Tuple:
     agents = {
         common.AIRCRAFT: imageio.imread(os.path.join(assets_dir, "ac.png")),
         common.VEHICLE: imageio.imread(os.path.join(assets_dir, "vc.png")),
-        common.UNKNOWN: imageio.imread(os.path.join(assets_dir, "uk_ac.png"))
+        common.UNKNOWN: imageio.imread(os.path.join(assets_dir, "uk_ac.png")),
+        common.OTHER: imageio.imread(os.path.join(assets_dir, "helo.png"))
     }
     return raster_map, hold_lines, graph_nx, (limits, ref_data), agents
 
