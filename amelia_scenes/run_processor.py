@@ -67,7 +67,7 @@ def run(
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--airport", type=str, default="kbos", choices=['all'] + C.SUPPORTED_AIRPORTS)
+    parser.add_argument("--airport", type=str, default='all')
     parser.add_argument("--base_dir", type=str, default=f"{C.ROOT_DIR}/datasets/amelia")
     parser.add_argument("--traj_version", type=str, default="a10v08")
     parser.add_argument("--graph_version", type=str, default="a10v01os")
@@ -81,10 +81,14 @@ if __name__ == "__main__":
     parser.add_argument("--jobs", type=int, default=-1)
     args = parser.parse_args()
 
+    supported_airports = C.get_available_airports(args.base_dir)
+
     if args.airport == 'all':
         kargs = vars(args)
-        for airport in C.SUPPORTED_AIRPORTS:
+        for airport in supported_airports:
             kargs['airport'] = airport
             run(**kargs)
-    else:
+    elif args.airport in supported_airports:
         run(**vars(args))
+    else:
+        raise ValueError(f"Airport {args.airport} not found in {args.base_dir}")
