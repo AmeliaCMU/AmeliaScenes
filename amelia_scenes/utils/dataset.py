@@ -128,6 +128,9 @@ def get_airport_files(airport: str, data_prep: dict):
     """
 
     in_data_dir = os.path.join(data_prep.in_data_dir, airport)
+    if not os.path.exists(in_data_dir):
+        print(f"Path not found: {in_data_dir}. Skipping {airport}...")
+        return []
 
     airport_files = []
     for fp in os.listdir(in_data_dir):
@@ -140,7 +143,7 @@ def get_airport_files(airport: str, data_prep: dict):
     return airport_files
 
 
-def create_random_splits(data_prep: EasyDict, airport_list: list):
+def create_random_splits(data_prep: EasyDict, airport: str):
     """ Splits the data by month. If no `test_airports` are specified, then it will iterate over all
     `train_airports` and create a train-val-test split for each, by keeping floor(75%) of the files
     into the train-val and the remaining floor(25%) into the test set. Files are randomly selected.
@@ -155,29 +158,28 @@ def create_random_splits(data_prep: EasyDict, airport_list: list):
         split_dir = os.path.join(data_prep.out_data_dir, f"{split}_splits")
         os.makedirs(split_dir, exist_ok=True)
 
-    for airport in airport_list:
-        airport_files = get_airport_files(airport, data_prep)
+    airport_files = get_airport_files(airport, data_prep)
 
-        N_train = floor(len(airport_files) * n_train)
-        N_val = floor(len(airport_files) * n_val)
+    N_train = floor(len(airport_files) * n_train)
+    N_val = floor(len(airport_files) * n_val)
 
-        filename = f"{airport}_{data_prep.split_type}"
+    filename = f"{airport}_{data_prep.split_type}"
 
-        # Write the out the splits
-        train_list = airport_files[:N_train]
-        with open(f"{data_prep.out_data_dir}/train_splits/{filename}.txt", 'w') as fp:
-            fp.write('\n'.join(train_list))
+    # Write the out the splits
+    train_list = airport_files[:N_train]
+    with open(f"{data_prep.out_data_dir}/train_splits/{filename}.txt", 'w') as fp:
+        fp.write('\n'.join(train_list))
 
-        val_list = airport_files[N_train:N_train+N_val]
-        with open(f"{data_prep.out_data_dir}/val_splits/{filename}.txt", 'w') as fp:
-            fp.write('\n'.join(val_list))
+    val_list = airport_files[N_train:N_train+N_val]
+    with open(f"{data_prep.out_data_dir}/val_splits/{filename}.txt", 'w') as fp:
+        fp.write('\n'.join(val_list))
 
-        test_list = airport_files[N_train+N_val:]
-        with open(f"{data_prep.out_data_dir}/test_splits/{filename}.txt", 'w') as fp:
-            fp.write('\n'.join(test_list))
+    test_list = airport_files[N_train+N_val:]
+    with open(f"{data_prep.out_data_dir}/test_splits/{filename}.txt", 'w') as fp:
+        fp.write('\n'.join(test_list))
 
 
-def create_day_splits(data_prep: dict, airport_list: list):
+def create_day_splits(data_prep: dict, airport: str):
     """ Splits the data by month. If no `test_airports` are specified, then it will iterate over all
     `seen_airports` and create a train-val-test split for each, by keeping floor(75%) of the days
     into the train-val and the remaining floor(25%) into the test set.
@@ -193,44 +195,43 @@ def create_day_splits(data_prep: dict, airport_list: list):
         split_dir = os.path.join(data_prep.out_data_dir, f"{split}_splits")
         os.makedirs(split_dir, exist_ok=True)
 
-    for airport in airport_list:
         # Collect all airport files in current airport and get the unique days for which data was
         # collected.
-        airport_files = np.asarray(get_airport_files(airport, data_prep))
-        days_per_file = np.asarray([datetime.fromtimestamp(
-            int(f.split('/')[-1].split('.')[0].split('_')[-1]),
-            tz=timezone.utc).day for f in airport_files])
+    airport_files = np.asarray(get_airport_files(airport, data_prep))
+    days_per_file = np.asarray([datetime.fromtimestamp(
+        int(f.split('/')[-1].split('.')[0].split('_')[-1]),
+        tz=timezone.utc).day for f in airport_files])
 
-        days = np.unique(days_per_file)
-        num_days = days.shape[0]
+    days = np.unique(days_per_file)
+    num_days = days.shape[0]
 
-        np.random.seed(data_prep.seed)
+    np.random.seed(data_prep.seed)
 
-        # Make sure test set does not contain days "seen" during training.
-        train_val_days = np.random.choice(days, size=int(train_val_perc * num_days), replace=False)
-        test_days = list(set(days.tolist()).symmetric_difference(train_val_days.tolist()))
+    # Make sure test set does not contain days "seen" during training.
+    train_val_days = np.random.choice(days, size=int(train_val_perc * num_days), replace=False)
+    test_days = list(set(days.tolist()).symmetric_difference(train_val_days.tolist()))
 
-        train_val_idx = np.in1d(days_per_file, train_val_days)
-        train_val_files = airport_files[train_val_idx].tolist()
+    train_val_idx = np.in1d(days_per_file, train_val_days)
+    train_val_files = airport_files[train_val_idx].tolist()
 
-        filename = f"{airport}_{data_prep.split_type}"
+    filename = f"{airport}_{data_prep.split_type}"
 
-        N_train = floor(len(train_val_files) * n_train)
-        train_list = train_val_files[:N_train]
-        with open(f"{data_prep.out_data_dir}/train_splits/{filename}.txt", 'w') as fp:
-            fp.write('\n'.join(train_list))
+    N_train = floor(len(train_val_files) * n_train)
+    train_list = train_val_files[:N_train]
+    with open(f"{data_prep.out_data_dir}/train_splits/{filename}.txt", 'w') as fp:
+        fp.write('\n'.join(train_list))
 
-        val_list = train_val_files[N_train:]
-        with open(f"{data_prep.out_data_dir}/val_splits/{filename}.txt", 'w') as fp:
-            fp.write('\n'.join(val_list))
+    val_list = train_val_files[N_train:]
+    with open(f"{data_prep.out_data_dir}/val_splits/{filename}.txt", 'w') as fp:
+        fp.write('\n'.join(val_list))
 
-        test_idx = np.in1d(days_per_file, test_days)
-        test_list = airport_files[test_idx].tolist()
-        with open(f"{data_prep.out_data_dir}/test_splits/{filename}.txt", 'w') as fp:
-            fp.write('\n'.join(test_list))
+    test_idx = np.in1d(days_per_file, test_days)
+    test_list = airport_files[test_idx].tolist()
+    with open(f"{data_prep.out_data_dir}/test_splits/{filename}.txt", 'w') as fp:
+        fp.write('\n'.join(test_list))
 
 
-def create_month_splits(data_prep: dict, airport_list: list):
+def create_month_splits(data_prep: dict, airport: str):
     """ Splits the data by month. If no `test_airports` are specified, then it will iterate over all
     `seen_airports` and create a train-val-test split for each, by keeping floor(75%) of the days
     into the train-val and the remaining floor(25%) into the test set.
@@ -246,39 +247,39 @@ def create_month_splits(data_prep: dict, airport_list: list):
         split_dir = os.path.join(data_prep.out_data_dir, f"{split}_splits")
         os.makedirs(split_dir, exist_ok=True)
 
-    for airport in airport_list:
-        # Collect all airport files in current airport and get the unique days for which data was
-        # collected.
-        airport_files = np.asarray(get_airport_files(airport, data_prep))
-        month_per_file = np.asarray([datetime.fromtimestamp(
-            int(f.split('/')[-1].split('.')[0].split('_')[-1]),
-            tz=timezone.utc).month for f in airport_files])
+    # Collect all airport files in current airport and get the unique days for which data was
+    # collected.
+    airport_files = np.asarray(get_airport_files(airport, data_prep))
 
-        months = np.unique(month_per_file)
-        num_months = months.shape[0]
+    month_per_file = np.asarray([datetime.fromtimestamp(
+        int(f.split('/')[-1].split('.')[0].split('_')[-1]),
+        tz=timezone.utc).month for f in airport_files])
 
-        np.random.seed(data_prep.seed)
+    months = np.unique(month_per_file)
+    num_months = months.shape[0]
 
-        # Make sure test set does not contain months "seen" during training.
-        train_val_months = np.random.choice(
-            months, size=int(train_val_perc * num_months), replace=False)
-        test_months = list(set(months.tolist()).symmetric_difference(train_val_months.tolist()))
+    np.random.seed(data_prep.seed)
 
-        train_val_idx = np.in1d(month_per_file, train_val_months)
-        train_val_files = airport_files[train_val_idx].tolist()
+    # Make sure test set does not contain months "seen" during training.
+    train_val_months = np.random.choice(
+        months, size=int(train_val_perc * num_months), replace=False)
+    test_months = list(set(months.tolist()).symmetric_difference(train_val_months.tolist()))
 
-        filename = f"{airport}_{data_prep.split_type}"
+    train_val_idx = np.in1d(month_per_file, train_val_months)
+    train_val_files = airport_files[train_val_idx].tolist()
 
-        N_train = floor(len(train_val_files) * n_train)
-        train_list = train_val_files[:N_train]
-        with open(f"{data_prep.out_data_dir}/train_splits/{filename}.txt", 'w') as fp:
-            fp.write('\n'.join(train_list))
+    filename = f"{airport}_{data_prep.split_type}"
 
-        val_list = train_val_files[N_train:]
-        with open(f"{data_prep.out_data_dir}/val_splits/{filename}.txt", 'w') as fp:
-            fp.write('\n'.join(val_list))
+    N_train = floor(len(train_val_files) * n_train)
+    train_list = train_val_files[:N_train]
+    with open(f"{data_prep.out_data_dir}/train_splits/{filename}.txt", 'w') as fp:
+        fp.write('\n'.join(train_list))
 
-        test_idx = np.in1d(month_per_file, test_months)
-        test_list = airport_files[test_idx].tolist()
-        with open(f"{data_prep.out_data_dir}/test_splits/{filename}.txt", 'w') as fp:
-            fp.write('\n'.join(test_list))
+    val_list = train_val_files[N_train:]
+    with open(f"{data_prep.out_data_dir}/val_splits/{filename}.txt", 'w') as fp:
+        fp.write('\n'.join(val_list))
+
+    test_idx = np.in1d(month_per_file, test_months)
+    test_list = airport_files[test_idx].tolist()
+    with open(f"{data_prep.out_data_dir}/test_splits/{filename}.txt", 'w') as fp:
+        fp.write('\n'.join(test_list))
