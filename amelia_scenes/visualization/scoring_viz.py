@@ -96,13 +96,14 @@ def plot_scene_scores(
     """ Tool for visualizing marginal model predictions for the ego-agent. """
     mm =  C.MOTION_COLORS['multi_modal']
     
-    bkg, hold_lines, graph_nx, limits, agents = assets
+    bkg, hold_lines, graph_nx, (limits, ref_data), agents = assets
     north, east, south, west, z_min, z_max = limits
 
     fig, axs = plt.subplots(1, 1+len(agent_scores.keys()), figsize=(30, 80))
 
     k_agents_ids = {}
     for score_type, score_values in agent_scores.items():
+        # breakpoint()
         norm_scores = C.norm(score_values)
         agent_scores[score_type] = norm_scores
         k_agents_ids[score_type] = np.argsort(norm_scores)[::-1][:k_agents]

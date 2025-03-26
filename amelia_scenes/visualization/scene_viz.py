@@ -68,6 +68,16 @@ def plot_scene(
         marginal.plot_scene_marginal(
             scene, assets, predictions, filename, dpi, reproject=reproject, plot_all=plot_all)
 
+    elif scene_type == 'scores':
+        # raise NotImplementedError
+        # agents_interest = benchmark['bench_agents']
+        agent_sequences, agent_masks = scene['agent_sequences'][:, :, G.HLL], scene['agent_masks']
+        agent_types, agent_ids = scene['agent_types'], scene['agent_ids']
+        agent_scores    = scene['meta']['agent_scores'] 
+        # if scores else None
+        scoring.plot_scene_scores(
+            agent_sequences, agent_scores, assets, agent_masks, agent_types, agent_ids, tag=filename, dpi=dpi
+            )
     else:
         raise NotImplementedError
     # elif scene_type == 'strategy':
@@ -76,13 +86,6 @@ def plot_scene(
     #     scoring.plot_scene_strategy(
     #         agent_sequences, agent_order, assets, agent_masks, agent_types, agent_ids, tag=filetag,
     #         dpi=dpi)
-    # elif scene_type == 'scores':
-    #     raise NotImplementedError
-    #     agents_interest = benchmark['bench_agents']
-    #     agent_scores = scenario['meta']['agent_scores'] if scores else None
-    #     scoring.plot_scene_scores(
-    #         agent_sequences, agent_scores, assets, agent_masks, agent_types, agent_ids, tag=filetag,
-    #         agents_interest=agents_interest, dpi=dpi)
     # else:
     #     raise NotImplementedError
     #     scoring.plot_scene_features(scenario, assets, filetag, features_to_add, features, dpi=dpi)
