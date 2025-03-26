@@ -18,9 +18,9 @@ from typing import Tuple
 from amelia_scenes.utils import common
 
 
-def load_assets(input_dir: str, airport: str) -> Tuple:
+def load_assets(input_dir: str, airport: str, graph_file: str = "graph_data_a48v01os") -> Tuple:
     # Graph
-    graph_data_dir = os.path.join(input_dir, "graph_data_a10v01os", airport)
+    graph_data_dir = os.path.join(input_dir, graph_file, airport)
     print(f"Loading graph data from: {graph_data_dir}")
     pickle_map_filepath = os.path.join(graph_data_dir, "semantic_graph.pkl")
     with open(pickle_map_filepath, 'rb') as f:

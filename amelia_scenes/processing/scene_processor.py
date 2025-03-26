@@ -424,9 +424,10 @@ class SceneProcessor:
         kin_agents_scores, kin_scene_score = compute_kinematic_scores(scene, self.hold_lines)
         int_agents_scores, int_scene_score = compute_interactive_scores(scene, self.hold_lines)
         crit_agent_scores, crit_scene_score = compute_simple_scene_critical(
-            agent_scores_list=[kin_agents_scores, int_agents_scores],
-            scene_score_list=[crowd_scene_score, kin_scene_score, int_scene_score]
+            agent_scores_list=[kin_agents_scores.copy(), int_agents_scores].copy(),
+            scene_score_list=[crowd_scene_score.copy(), kin_scene_score.copy(), int_scene_score.copy()]
         )
+        # breakpoint()
         return  {
             'agent_scores': {
                 'kinematic': kin_agents_scores,

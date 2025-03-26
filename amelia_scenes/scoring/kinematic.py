@@ -78,24 +78,28 @@ def compute_kinematic_scores(
     # overall score
     scores = (wp_scores + ac_scores + speed_scores + jerk_scores).to_numpy()
     agent_combinations = list(itertools.combinations(range(N), 2))
-    for n, m in agent_combinations:
-        # scores[n] += (ac_scores[n] * wp_scores[m]) - (wp_scores[n] * wp_scores[m])
-        wp_nm = wp_scores[n] * wp_scores[m]
-        wp_np = wp_scores[m] / (0.001 + speed_scores[n])
-        # reward = ac_scores[n] * wp_scores[m] + ac_scores[m] * wp_scores[n]
-        # scores[n] += (reward - penalty)
-        # scores[m] += (reward - penalty)
-        scores[n] += (
-            ac_scores[n] * wp_scores[m] + 
-            wp_scores[n] * ac_scores[m] - 
-            wp_nm - (wp_scores[m] / (0.001 + speed_scores[n]))
-        )
+    
+    # NOTE: Debugging agent pairing score. Scale is too big
+    # for n, m in agent_combinations:
+    #     breakpoint()
+    #     # scores[n] += (ac_scores[n] * wp_scores[m]) - (wp_scores[n] * wp_scores[m])
+    #     wp_nm = wp_scores[n] * wp_scores[m]
+    #     wp_np = wp_scores[m] / (0.001 + speed_scores[n])
+    #     # reward = ac_scores[n] * wp_scores[m] + ac_scores[m] * wp_scores[n]
+    #     # scores[n] += (reward - penalty)
+    #     # scores[m] += (reward - penalty)
+    #     scores[n] += (
+    #         ac_scores[n] * wp_scores[m] + 
+    #         wp_scores[n] * ac_scores[m] - 
+    #         wp_nm - (wp_scores[m] / (0.001 + speed_scores[n]))
+    #     )
 
-        scores[m] += (
-            ac_scores[m] * wp_scores[n] + 
-            wp_scores[m] * ac_scores[n] - 
-            wp_nm - (wp_scores[n] / (0.001 + speed_scores[m]))
-        )
+    #     scores[m] += (
+    #         ac_scores[m] * wp_scores[n] + 
+    #         wp_scores[m] * ac_scores[n] - 
+    #         wp_nm - (wp_scores[n] / (0.001 + speed_scores[m]))
+    #     )
+    
     scores = scores + scores.min()
     scores *= weights
     scores = np.clip(scores, a_min=0.0, a_max=max_score)
