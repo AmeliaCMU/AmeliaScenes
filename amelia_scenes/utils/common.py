@@ -119,7 +119,7 @@ def get_available_airports(in_data_dir: str) -> list:
     airport_assets = glob.glob(os.path.join(in_data_dir, 'assets', '*'))
     available_airports = []
     for file in airport_assets:
-        if os.path.isdir(file):
+        if os.path.isdir(file) and "blacklist" not in file:
             available_airports.append(os.path.basename(file))
     available_airports.sort()
     return available_airports
