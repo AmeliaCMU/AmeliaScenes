@@ -60,8 +60,10 @@ def run(
         "seed": seed,
         "jobs": jobs
     })
-
-    Pr(config=config).process_data()
+    try:
+        Pr(config=config).process_data()
+    except Exception as e:
+        print(f"Error processing {airport}: {e}")
 
 
 if __name__ == "__main__":
