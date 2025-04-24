@@ -12,13 +12,17 @@ np.set_printoptions(suppress=True)
 pd.options.mode.chained_assignment = None
 
 # TODO: same as the global_masks.py, avoid copying these global variables to each module.
+OTHER = -1
 AIRCRAFT = 0
 VEHICLE = 1
 UNKNOWN = 2
+AIRCRAFT_PADDED = 3
+AIRCRAFT_INVALID = 4
 
 EPS = 1e-5
 
 WEIGHTS = {
+    OTHER: 1.0,
     AIRCRAFT: 1.0,
     VEHICLE: 0.2,
     UNKNOWN: 0.4
@@ -72,7 +76,7 @@ def get_random_order(num_agents, agent_valid, seed):
 # TODO: debug this function!
 
 
-def impute(seq: pd.DataFrame, seq_len: int, imputed_flag: float = 1.0) -> pd.DataFrame:
+def impute(seq: pd.DataFrame, seq_len: int, imputed_flag: float = 0.0) -> pd.DataFrame:
     """ Imputes missing data via linear interpolation.
 
     Inputs

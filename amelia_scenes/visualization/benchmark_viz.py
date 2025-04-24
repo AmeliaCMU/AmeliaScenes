@@ -40,7 +40,8 @@ def plot_scene_benchmark(
     ax.set_title(f"{airport_name.upper()} ({date})")
 
     C.plot_sequences(ax, scene, agents, agents_interest, halo_values=halo_values, reproject=reproject)
-    C.save(ax, filename, dpi, limits=[west, east, south, north], force_extent=True)
+    C.save(ax, filename, dpi)#, limits=[west, east+0.001, south, north], force_extent=True)
+    # C.save(ax, filename, dpi, limits=[west, east, south, north], force_extent=True)
 
 
 def plot_scene_benchmark_predictions(
@@ -116,26 +117,28 @@ def plot_scene_benchmark_predictions(
                     pred[:, 1], sigma_n[:, 0], sigma_p[:, 0], lw=mm[1], alpha=score * 0.50,
                     color=mm[0], interpolate=True)
 
-    # TODO: resolve 3D collisions
-    # Compute collision (Collision with full traj)
-    # agent_combinations = list(itertools.combinations(range(N), 2))
-    agent_combinations = []
-    for i, j in agent_combinations:
-        agent_i = (preds_xy[i], None, None, None, None, None)
-        agent_j = (preds_xy[j], None, None, None, None, None)
-        coll = compute_collisions(agent_i, agent_j, collision_threshold=0.2)  # [hist_len:]
-        if np.any(coll == 1.0):
-            min_t = np.where(coll == 1.0)[0].min()  # + hist_len
-            plt.suptitle(f"Predicted Trajectories Collide from t={min_t}s", color="red")
-            filename += "_coll"
-            pred_i, pred_j = preds_ll[i, min_t].unsqueeze(0), preds_ll[j, min_t].unsqueeze(0)
-            pred_i = C.reproject_sequences(pred_i, projection) if reproject else pred_i
-            ax.scatter(pred_i[:, 1], pred_i[:, 0], marker=(10, 1, 0), color='red', s = 70, zorder=10)
-            ax.scatter(pred_i[:, 1], pred_i[:, 0], marker=(10, 1, 2), color='orange', s = 20, zorder=10)
+    # # TODO: resolve 3D collisions
+    # # Compute collision (Collision with full traj)
+    # # agent_combinations = list(itertools.combinations(range(N), 2))
+    # agent_combinations = []
+    # for i, j in agent_combinations:
+    #     agent_i = (preds_xy[i], None, None, None, None, None)
+    #     agent_j = (preds_xy[j], None, None, None, None, None)
+    #     coll = compute_collisions(agent_i, agent_j, collision_threshold=0.2)  # [hist_len:]
+    #     if np.any(coll == 1.0):
+    #         min_t = np.where(coll == 1.0)[0].min()  # + hist_len
+    #         plt.suptitle(f"Predicted Trajectories Collide from t={min_t}s", color="red")
+    #         filename += "_coll"
+    #         pred_i, pred_j = preds_ll[i, min_t].unsqueeze(0), preds_ll[j, min_t].unsqueeze(0)
+    #         pred_i = C.reproject_sequences(pred_i, projection) if reproject else pred_i
+    #         ax.scatter(pred_i[:, 1], pred_i[:, 0], marker=(10, 1, 0), color='red', s = 70, zorder=10)
+    #         ax.scatter(pred_i[:, 1], pred_i[:, 0], marker=(10, 1, 2), color='orange', s = 20, zorder=10)
             
-            pred_j = C.reproject_sequences(pred_j, projection) if reproject else pred_j
-            ax.scatter(pred_j[:, 1], pred_j[:, 0], marker=(10, 1, 0), color='red', s = 70, zorder=10)
-            ax.scatter(pred_j[:, 1], pred_j[:, 0], marker=(10, 1, 2), color='orange', s = 20, zorder=10)
+    #         pred_j = C.reproject_sequences(pred_j, projection) if reproject else pred_j
+    #         ax.scatter(pred_j[:, 1], pred_j[:, 0], marker=(10, 1, 0), color='red', s = 70, zorder=10)
+    #         ax.scatter(pred_j[:, 1], pred_j[:, 0], marker=(10, 1, 2), color='orange', s = 20, zorder=10)
             
     # Plot movement
-    C.save(ax, filename, dpi, limits=[west, east, south, north], force_extent=True)
+    # C.save(ax, filename, dpi, limits=[west, east, south, north], force_extent=True)
+    # C.save(ax, filename, dpi, limits=[west, east+0.02, south-0.04, north+0.02], force_extent=True)
+    C.save(ax, filename, dpi, limits=[west, east+0.05, south-0.08, north+0.05], force_extent=True)

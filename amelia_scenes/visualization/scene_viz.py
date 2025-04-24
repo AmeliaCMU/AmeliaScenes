@@ -8,10 +8,10 @@ from amelia_scenes.visualization import scoring_viz as scoring
 from amelia_scenes.visualization import marginal_predictions as marginal
 from amelia_scenes.utils import global_masks as G
 
-
 # available scene visualization
 SUPPORTED_SCENES_TYPES = [
     'simple',
+    'padded',
     'benchmark',
     'benchmark_pred',
     'marginal_pred',
@@ -20,7 +20,6 @@ SUPPORTED_SCENES_TYPES = [
     'scores',
     'strategy'
 ]
-
 
 def plot_scene(
     scene: dict,
@@ -56,15 +55,16 @@ def plot_scene(
         bench.plot_scene_benchmark(scene, assets, benchmark, filename, dpi, reproject=reproject)
     elif scene_type == 'benchmark_pred':
         predictions = kwargs.get('predictions')
-        assert predictions, f"Predictions not provided"
+        assert predictions, "Predictions not provided" 
         benchmark = scene['benchmark']
+        # benchmark = None
         bench.plot_scene_benchmark_predictions(
             scene, assets, benchmark, predictions, filename, dpi, reproject=reproject)
     elif scene_type == 'marginal_pred':
         predictions = kwargs.get('predictions')
-        assert predictions, f"Predictions not provided"
+        assert predictions, "Predictions not provided"
         plot_all = kwargs.get('plot_all')
-        assert plot_all, f"Plot all agents not provided"
+        assert plot_all, "Plot all agents not provided"
         marginal.plot_scene_marginal(
             scene, assets, predictions, filename, dpi, reproject=reproject, plot_all=plot_all)
 
@@ -103,11 +103,13 @@ def plot_scene_simple(
         north, east, south, west = C.transform_extent(limits, C.MAP_CRS, projection)
 
     fig, ax = plt.subplots()
-
-    # Display global map
-
+    
+    # Plots airport map as background
     ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3)
-
+    # Plots all agent sequences
     C.plot_sequences(
-        ax, scene, agents, agents_interest=agents_interest, reproject=reproject, projection=projection)
-    C.save(ax, filename, dpi, limits=[west, east, south, north])
+        ax, scene, agents, 
+        agents_interest=agents_interest, 
+        reproject=reproject, 
+        projection=projection)
+    C.save(ax, filename, dpi)#, limits=[west, east, south, north])

@@ -37,6 +37,7 @@ COLOR_CODES = {
     5: '#f05eee',
 }
 
+
 MOTION_COLORS = {
     'gt_hist': ('#FF5A4C', 0.9),
     'gt_hist_missing': ('#1289F3', 0.9),
@@ -49,9 +50,13 @@ MOTION_COLORS = {
     'other_agent': ('#F29C3A', 0.0),
 }
 
+OTHER = -1
 AIRCRAFT = 0
 VEHICLE = 1
 UNKNOWN = 2
+AIRCRAFT_PADDED = 3
+AIRCRAFT_INVALID = 4
+
 
 KNOTS_TO_MPS = 0.51444445
 KNOTS_TO_KPH = 1.852
@@ -59,9 +64,21 @@ HOUR_TO_SECOND = 3600
 KMH_TO_MS = 1/3.6
 
 ZOOM = {
+    OTHER: 0.025,
     AIRCRAFT: 0.015,
     VEHICLE: 0.2,
-    UNKNOWN: 0.015
+    UNKNOWN: 0.015,
+    AIRCRAFT_PADDED: 0.015,
+    AIRCRAFT_INVALID: 0.015,
+}
+
+AGENT_COLORS = {
+    OTHER: '#F29C3A',
+    AIRCRAFT: '#FF5A4C',
+    VEHICLE: '#5ea2cf',
+    UNKNOWN: '#8a8585',
+    AIRCRAFT_PADDED: '#2725e1',
+    AIRCRAFT_INVALID: '#7525e1',
 }
 
 LL_TO_KNOTS = 1000 * 111 * 1.94384
@@ -87,10 +104,10 @@ def norm(arr, method: str = 'minmax'):
     return arr
 
 
-def plot_agent(asset, heading, zoom=0.015):
+def plot_agent(asset, heading, zoom=0.015, alpha=1.0):
     img = ndimage.rotate(asset, heading)
     img = np.fliplr(img)
-    img = OffsetImage(img, zoom=zoom)
+    img = OffsetImage(img, zoom=zoom, alpha=alpha)
     return img
 
 
@@ -194,16 +211,18 @@ def plot_sequences(
     reproject: bool = False, projection: str = 'EPSG:3857'
 ) -> None:
     agent_sequences, agent_masks = scene['agent_sequences'][:, :, G.HLL], scene['agent_masks']
-    agent_types, agent_ids = scene['agent_types'], scene['agent_ids']
+    agent_types, agent_ids, agent_valid = scene['agent_types'], scene['agent_ids'], scene['agent_valid']
 
+    num_agents, seq_len, _ = agent_sequences.shape
     # halo values check
     if agents_interest and not halo_values:
         halo_values = [MOTION_COLORS['interest_agent']] * len(agents_interest)
-    agents_plot = {agent_id: halo_value for agent_id, halo_value in zip(agents_interest, halo_values)}
+    agents_plot = {agent_id: 1.0-halo_value for agent_id, halo_value in zip(agents_interest, halo_values)}
+    
     # Display each trajectory
     traj_color, traj_lw = MOTION_COLORS['gt_hist'][0], MOTION_COLORS['gt_hist'][1]
-    zipped = zip(agent_sequences, agent_types, agent_masks, agent_ids)
-    for n, (trajectory, agent_type, mask, agent_id) in enumerate(zipped):
+    zipped = zip(agent_sequences, agent_types, agent_masks, agent_ids, agent_valid)
+    for n, (trajectory, agent_type, mask, agent_id, valid) in enumerate(zipped):
         traj = trajectory[mask]
         if traj.shape[0] == 0:
             continue
@@ -214,24 +233,29 @@ def plot_sequences(
         lon, lat = traj_ll[-1, 1], traj_ll[-1, 0]
         if lon == 0 or lat == 0:
             continue
-
-        agent_type = int(agent_type)
+        
+        # TODO: Need to check for all agent types **sigh**
+        agent_type, alpha = int(agent_type), 1.0
+        alpha = 1.0 if valid else 0.3 
+        traj_ls = 'solid' if valid and mask.sum() == seq_len else 'dotted'
+        
         # Place plane on last point of ground truth sequence
         icon = agents[agent_type]
-        img = plot_agent(icon, heading, zoom=ZOOM[agent_type])
+        img = plot_agent(icon, heading, zoom=ZOOM[agent_type], alpha=alpha)
         if agent_id in agents_interest:
-            color, alpha = agents_plot[agent_id]
-            ax.scatter(lon, lat, color='#F29C3A', alpha=alpha, s=160)
+            alpha = agents_plot[agent_id]
+            ax.scatter(lon, lat, color='#FF5A4C', alpha=alpha, s=160)
         ab = AnnotationBbox(img, (lon, lat), frameon=False)
         ax.add_artist(ab)
 
-        ax.plot(traj_ll[:, 1], traj_ll[:, 0], color=traj_color, lw=traj_lw)
-
+        ax.plot(traj_ll[:, 1], traj_ll[:, 0], color=traj_color, lw=traj_lw, ls=traj_ls, alpha=alpha)
+        # ax.text(traj_ll[0, 1], traj_ll[0, 0], f"{agent_id}")
 
 def plot_sequences_segmented(
     ax, scene: dict, agents: dict, agents_interest: list = [], halo_values: list = [],
     reproject: bool = False, projection: str = 'EPSG:3857'
 ) -> None:
+    # breakpoint()
     agent_sequences, agent_masks = scene['agent_sequences'][:, :, G.HLL], scene['agent_masks']
     agent_types, agent_ids, hist_len = scene['agent_types'], scene['agent_ids'], scene['hist_len']
 
@@ -240,9 +264,9 @@ def plot_sequences_segmented(
     fut_linestyle = 'dotted'
 
     # halo values check
-    if agents_interest.size and not halo_values.size:
-        halo_values = [MOTION_COLORS['interest_agent']] * len(agents_interest)
-    agents_plot = {agent_id: halo_value for agent_id, halo_value in zip(agents_interest, halo_values)}
+    # if agents_interest.size and not halo_values.size:
+        # halo_values = [MOTION_COLORS['interest_agent']] * len(agents_interest)
+    # agents_plot = {agent_id: halo_value for agent_id, halo_value in zip(agents_interest, halo_values)}
 
     gt_hists, gt_futs = agent_sequences[:, :hist_len], agent_sequences[:, hist_len:]
     zipped = zip(gt_hists, gt_futs, agent_types, agent_masks, agent_ids)
@@ -273,7 +297,8 @@ def plot_sequences_segmented(
             icon = agents[agent_type]
             img = plot_agent(icon, heading, zoom=ZOOM[agent_type])
             if agent_id in agents_interest:
-                color = cm.autumn(halo_value) # '#F29C3A'
+                # color = cm.autumn(halo_value) # '#F29C3A'
+                color = '#F29C3A'
                 ax.scatter(lon, lat, color=color, alpha=MOTION_COLORS['ego_agent'][1], s = 160)        
             ab = AnnotationBbox(img, (lon, lat), frameon = False) 
             # ax.text(lon, lat, scene['agent_ids'][n], fontsize=10)

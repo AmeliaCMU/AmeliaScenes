@@ -45,7 +45,6 @@ class SceneProcessor:
         self.benchmark = config.benchmark
         self.add_scores_meta = config.add_scores_meta
 
-        self.add_padd = self.benchmark
         self.seed = config.seed
         self.extend = True
         self.seq_extent = 1
@@ -127,7 +126,8 @@ class SceneProcessor:
         """
         if self.benchmark:
             return self.process_file_bench(f)
-            
+        
+        # print(f"Processing file: {f}")
         base_name = f.split('/')[-1]
         shard_name = base_name.split('.')[0]
         airport_id = base_name.split('_')[0].lower()
@@ -158,6 +158,10 @@ class SceneProcessor:
 
         valid_seq = 0
         for i in range(0, num_sequences * self.skip + 1, self.skip):
+            # if i == 3154:
+            #     print(i, num_sequences)
+            #     breakpoint()
+
             scenario_id = str(valid_seq).zfill(6)
             seq, agent_id, agent_type, agent_valid, agent_mask = self.process_seq(
                 frame_data=frame_data, frames=frames, seq_idx=i, airport_id=airport_id)
@@ -176,7 +180,7 @@ class SceneProcessor:
                 'agent_masks': agent_mask,
                 'agent_valid': agent_valid,
             }
-            scene['meta'] = self.process_scores(EasyDict(scene)) if self.add_scores_meta else None
+            # scene['meta'] = self.process_scores(EasyDict(scene)) if self.add_scores_meta else None
 
             scene_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
             with open(scene_filepath, 'wb') as f:
@@ -282,7 +286,7 @@ class SceneProcessor:
                 'agent_valid': agent_valid,
                 'benchmark': benchmark
             }
-            scene['meta'] = self.process_scores(EasyDict(scene)) if self.add_scores_meta else None
+            # scene['meta'] = self.process_scores(EasyDict(scene)) if self.add_scores_meta else None
 
             scene_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
             with open(scene_filepath, 'wb') as f:
@@ -322,6 +326,14 @@ class SceneProcessor:
         # All data for the current sequence: from the curr index i to i + sequence length
         seq_data = np.concatenate(frame_data[seq_idx:seq_idx + self.seq_len], axis=0)
 
+        # If the speed of all agents is zero or close, return None
+        if math.isclose(seq_data[:, G.RAW_IDX.Speed].sum(), 0):
+            return none_outs
+        
+        # If there are no aircraft in the sequence, return None
+        if not np.isin(seq_data[:, G.RAW_IDX.Type].astype(int), C.AIRCRAFT).sum():
+            return none_outs
+
         # IDs of agents in the current sequence
         unique_agents = np.unique(seq_data[:, G.RAW_IDX.ID])
         num_agents = len(unique_agents)
@@ -347,15 +359,9 @@ class SceneProcessor:
             # of the sequence or less if it disappears earlier.
             pad_end = frames.index(agent_seq[-1, 0]) - seq_idx + 1
 
-            # Exclude trajectories less then seq_len
-            if not self.add_padd and (pad_end - pad_front != self.seq_len):
-                continue
-
             # Scale altitude
             mx = self.ref_data.limits.Altitude.max
             mn = self.ref_data.limits.Altitude.min
-            # mx = 617.22 # meter norm
-            # mn = 116.77
             agent_seq[:, alt_idx] = (agent_seq[:, alt_idx] - mn) / (mx - mn)
 
             agent_id_list.append(int(agent_id))
@@ -364,7 +370,7 @@ class SceneProcessor:
 
             # Interpolated mask
             mask = agent_seq[:, G.RAW_IDX.Interp] == '[ORG]'
-            # Not interpolated -->     Valid
+            # Not interpolated --> Valid
             agent_seq[mask, G.RAW_IDX.Interp] = 1.0
             # Interpolated --> Not valid
             agent_seq[~mask, G.RAW_IDX.Interp] = 0.0
@@ -378,17 +384,9 @@ class SceneProcessor:
                         valid = False
                         break
             valid_agent_list.append(valid)
-            
-            # NOTE: debugging xplane
-            heading = np.degrees(np.unwrap(np.radians(agent_seq[:, G.RAW_IDX.Heading].astype(float))))
-            # # heading_start = agent_seq[:, G.RAW_IDX.Heading].astype(float)
-            # # if not np.allclose(heading_start-heading, 0.0):
-            # #     breakpoint()
-            # agent_seq[:, G.RAW_IDX.Heading] = heading
 
-            # TODO: debug impute
-            # Impute missing data using linear interpolation
-            agent_seq = C.impute(agent_seq, self.seq_len)
+            # TODO: Impute needs to be debugged. Imputing should not happen since it was done in SWIM.
+            agent_seq = C.impute(agent_seq, pad_end - pad_front)# self.seq_len)
             valid_mask = agent_seq[:, G.RAW_IDX.Interp].astype(bool)
             agent_masks[num_agents_considered, pad_front:pad_end] = valid_mask
 
