@@ -8,10 +8,10 @@ from amelia_scenes.visualization import scoring_viz as scoring
 from amelia_scenes.visualization import marginal_predictions as marginal
 from amelia_scenes.utils import global_masks as G
 
-
 # available scene visualization
 SUPPORTED_SCENES_TYPES = [
     'simple',
+    'padded',
     'benchmark',
     'benchmark_pred',
     'marginal_pred',
@@ -20,7 +20,6 @@ SUPPORTED_SCENES_TYPES = [
     'scores',
     'strategy'
 ]
-
 
 def plot_scene(
     scene: dict,
@@ -104,15 +103,13 @@ def plot_scene_simple(
         north, east, south, west = C.transform_extent(limits, C.MAP_CRS, projection)
 
     fig, ax = plt.subplots()
-    # breakpoint()
-    # Display global map
-<<<<<<< Updated upstream
-
+    
+    # Plots airport map as background
     ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3)
-
-=======
-    ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3) 
->>>>>>> Stashed changes
+    # Plots all agent sequences
     C.plot_sequences(
-        ax, scene, agents, agents_interest=agents_interest, reproject=reproject, projection=projection)
+        ax, scene, agents, 
+        agents_interest=agents_interest, 
+        reproject=reproject, 
+        projection=projection)
     C.save(ax, filename, dpi)#, limits=[west, east, south, north])

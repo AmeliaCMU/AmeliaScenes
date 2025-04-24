@@ -18,7 +18,7 @@ from typing import Tuple
 from amelia_scenes.utils import common
 
 
-def load_assets(input_dir: str, airport: str, graph_file: str = "graph_data_a48v01os") -> Tuple:
+def load_assets(input_dir: str, airport: str, graph_file: str = "graph_data_a10v01os") -> Tuple:
     # Graph
     graph_data_dir = os.path.join(input_dir, graph_file, airport)
     print(f"Loading graph data from: {graph_data_dir}")
@@ -52,7 +52,10 @@ def load_assets(input_dir: str, airport: str, graph_file: str = "graph_data_a48v
         common.OTHER: imageio.imread(os.path.join(assets_dir, "helo.png")),
         common.AIRCRAFT: imageio.imread(os.path.join(assets_dir, "ac.png")),
         common.VEHICLE: imageio.imread(os.path.join(assets_dir, "vc.png")),
-        common.UNKNOWN: imageio.imread(os.path.join(assets_dir, "uk_ac.png"))
+        common.UNKNOWN: imageio.imread(os.path.join(assets_dir, "uk_ac.png")),
+        common.AIRCRAFT_PADDED: imageio.imread(os.path.join(assets_dir, "ac_padded.png")),
+        common.AIRCRAFT_INVALID: imageio.imread(os.path.join(assets_dir, "ac_inv.png"))
+
     }
     return raster_map, hold_lines, graph_nx, (limits, ref_data), agents
 
