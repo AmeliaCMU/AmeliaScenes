@@ -1,9 +1,10 @@
 import cv2
 import os
+import glob
 import numpy as np
 import pandas as pd
-import pickle
 import random
+
 
 from typing import Tuple
 
@@ -117,8 +118,10 @@ def compute_dists_to_conflict_points(conflict_points, positions):
 
 
 def get_available_airports(in_data_dir: str) -> list:
+    airport_assets = glob.glob(os.path.join(in_data_dir, 'assets', '*'))
     available_airports = []
-    for airport in SUPPORTED_AIRPORTS:
-        if os.path.isdir(os.path.join(in_data_dir, airport)):
-            available_airports.append(airport)
+    for file in airport_assets:
+        if os.path.isdir(file) and "blacklist" not in file:
+            available_airports.append(os.path.basename(file))
+    available_airports.sort()
     return available_airports

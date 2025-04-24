@@ -44,8 +44,8 @@ def compute_interactive_scores(
 
     def compute_simple_score(idx, eps=1e-5):
         return 10 * metrics.collisions[idx] + \
-            min(1 / 60, 1.0 / (metrics.agent_mttcp[idx] + eps)) + \
-            min(1 / 60, 1.0 / (metrics.scene_mttcp[idx] + eps))
+            min(norm_constant, 1.0 / (metrics.agent_mttcp[idx] + eps)) + \
+            min(norm_constant, 1.0 / (metrics.scene_mttcp[idx] + eps))
 
     N = scene.num_agents
     scores = np.zeros(shape=N)
@@ -55,6 +55,7 @@ def compute_interactive_scores(
         scores[j] += C.WEIGHTS[agent_types[1]] * compute_simple_score(n) / norm_constant
 
     scene_score = scores.max() + scores.mean()
+    
     return scores, scene_score
 
 # --------------------------------------------------------------------------------------------------

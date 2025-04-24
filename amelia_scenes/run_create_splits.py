@@ -29,24 +29,15 @@ def run(base_dir: str, traj_version: str, split_type: str, airport: str, seed: i
         },
     })
 
-    # get airport available list
-    airport_list = []
-    available_airports = C.get_available_airports(config.in_data_dir)
-    if args.airport != "all":
-        assert args.airport in available_airports, f"Airport {args.airport} not found in {config.in_data_dir}"
-        airport_list.append(args.airport)
-    else:
-        airport_list = available_airports
-
     if split_type == "random":
         # Will split data randomly. Simplest one, but potential data leakage.
-        dataset.create_random_splits(config, airport_list)
+        dataset.create_random_splits(config, airport)
     elif split_type == 'day':
         # Will split data by day. Useful to ensure that different days go into the train/test sets to avoid data leakage
-        dataset.create_day_splits(config, airport_list)
+        dataset.create_day_splits(config, airport)
     else:  # month
         # Will split data by month. Useful if we're training multiple months for a single airport, but can handle single-month airports as well.
-        dataset.create_month_splits(config, airport_list)
+        dataset.create_month_splits(config, airport)
 
 
 if __name__ == "__main__":
@@ -58,7 +49,17 @@ if __name__ == "__main__":
     parser.add_argument("--split_type", default='random',
                         choices=['random', 'day', 'month'])
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--airport", type=str, default="all", choices=["all"] + C.SUPPORTED_AIRPORTS)
+    parser.add_argument("--airport", type=str, default="all")
     args = parser.parse_args()
 
-    run(**vars(args))
+    supported_airports = C.get_available_airports(args.base_dir)
+
+    if args.airport == 'all':
+        kargs = vars(args)
+        for airport in supported_airports:
+            kargs['airport'] = airport
+            run(**kargs)
+    elif args.airport in supported_airports:
+        run(**vars(args))
+    else:
+        raise ValueError(f"Airport {args.airport} not found in {args.base_dir}")
