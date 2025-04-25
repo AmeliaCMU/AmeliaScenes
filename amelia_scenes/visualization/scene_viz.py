@@ -67,17 +67,17 @@ def plot_scene(
         assert plot_all, "Plot all agents not provided"
         marginal.plot_scene_marginal(
             scene, assets, predictions, filename, dpi, reproject=reproject, plot_all=plot_all)
-
+    elif scene_type == 'features':
+        features = kwargs.get('features', {})
+        assert features, "Features not provided for scene visualization"
+        scoring.plot_scene_features(
+            scene, assets, filename, features=features, reproject=reproject, dpi=dpi)
     elif scene_type == 'scores':
-        # raise NotImplementedError
-        # agents_interest = benchmark['bench_agents']
-        agent_sequences, agent_masks = scene['agent_sequences'][:, :, G.HLL], scene['agent_masks']
-        agent_types, agent_ids = scene['agent_types'], scene['agent_ids']
-        agent_scores    = scene['meta']['agent_scores'] 
+        scores = kwargs.get('scores', {})
+        assert scores, "Scores not provided for scene visualization"
         # if scores else None
         scoring.plot_scene_scores(
-            agent_sequences, agent_scores, assets, agent_masks, agent_types, agent_ids, tag=filename, dpi=dpi
-            )
+            scene, assets, filename, scores=scores, reproject=reproject, dpi=dpi)
     else:
         raise NotImplementedError
     # elif scene_type == 'strategy':

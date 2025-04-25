@@ -323,3 +323,46 @@ def to_gif(base_dir, scene_tag):
     for f in files:
         if not "coll" in f:
             os.remove(f)
+
+def plot_sequences_cm(
+    ax, scene: dict, agents: dict, reproject: bool = False, projection: str = 'EPSG:3857', 
+    valid_agents: list = [], Z: np.array = None, 
+) -> None:
+    agent_sequences, agent_masks = scene['agent_sequences'][:, :, G.HLL], scene['agent_masks']
+    agent_types, agent_ids, agent_valid = scene['agent_types'], scene['agent_ids'], scene['agent_valid']
+
+    num_agents, seq_len, _ = agent_sequences.shape
+   
+    # Display each trajectory
+    traj_lw = MOTION_COLORS['gt_hist'][1]
+    zipped = zip(agent_sequences, agent_types, agent_masks, agent_ids, agent_valid)
+    zn = 0
+    for n, (trajectory, agent_type, mask, agent_id, valid) in enumerate(zipped):
+        traj = trajectory[mask]
+        if traj.shape[0] == 0:
+            continue
+        
+
+        # Get heading at last point of trajectory history.
+        heading = traj[-1, 0]
+        traj_ll = reproject_sequences(traj[:, 1:], projection) if reproject else traj[:, 1:]
+        lon, lat = traj_ll[-1, 1], traj_ll[-1, 0]
+        if lon == 0 or lat == 0:
+            continue
+        
+        agent_type, alpha = int(agent_type), 1.0
+        alpha = 1.0 if valid else 0.3 
+        if n not in valid_agents:
+            traj_color = 'black'
+            alpha = 0.3
+        else:
+            traj_color = cm.autumn(1.0-Z[zn])
+            zn += 1
+
+        # Place plane on last point of ground truth sequence
+        icon = agents[agent_type]
+        img = plot_agent(icon, heading, zoom=ZOOM[agent_type], alpha=alpha)
+        ab = AnnotationBbox(img, (lon, lat), frameon=False)
+        ax.add_artist(ab)
+
+        ax.scatter(traj_ll[:, 1], traj_ll[:, 0], color=traj_color, s=0.8, alpha=alpha)

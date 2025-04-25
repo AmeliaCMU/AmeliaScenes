@@ -52,9 +52,9 @@ def load_assets(input_dir: str, airport: str, graph_file: str = "graph_data_a10v
         common.OTHER: imageio.imread(os.path.join(assets_dir, "helo.png")),
         common.AIRCRAFT: imageio.imread(os.path.join(assets_dir, "ac.png")),
         common.VEHICLE: imageio.imread(os.path.join(assets_dir, "vc.png")),
-        common.UNKNOWN: imageio.imread(os.path.join(assets_dir, "uk_ac.png")),
-        common.AIRCRAFT_PADDED: imageio.imread(os.path.join(assets_dir, "ac_padded.png")),
-        common.AIRCRAFT_INVALID: imageio.imread(os.path.join(assets_dir, "ac_inv.png"))
+        common.UNKNOWN: imageio.imread(os.path.join(assets_dir, "uk_acb.png")),
+        # common.AIRCRAFT_PADDED: imageio.imread(os.path.join(assets_dir, "ac_padded.png")),
+        # common.AIRCRAFT_INVALID: imageio.imread(os.path.join(assets_dir, "ac_inv.png"))
 
     }
     return raster_map, hold_lines, graph_nx, (limits, ref_data), agents
