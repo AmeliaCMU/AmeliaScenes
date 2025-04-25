@@ -1,13 +1,15 @@
 import os
 import pickle
 import random
+import numpy as np
 
 from natsort import natsorted
 from tqdm import tqdm
 
 from amelia_scenes.utils.dataset import load_assets
-from amelia_scenes.utils.common import SUPPORTED_AIRPORTS, ROOT_DIR
+from amelia_scenes.utils.common import SUPPORTED_AIRPORTS, ROOT_DIR, EPS
 from amelia_scenes.scoring.kinematic import compute_kinematic_features, compute_kinematic_scores
+from amelia_scenes.scoring.interactive import compute_interactive_features, compute_interactive_scores
 from amelia_scenes.visualization import scene_viz as viz
 
 SUBDIR = __file__.split('/')[-1].split('.')[0]
@@ -53,9 +55,29 @@ def run(
             scene = pickle.load(f)
 
         # Compute metrics
+        hold_lines = assets[1][:, 2:4]
         if feature_type == 'individual':
-            features = compute_kinematic_features(scene, assets[1][:, 2:4])
+            features = compute_kinematic_features(scene, hold_lines)
             scores = compute_kinematic_scores(scene, assets[1][:, 2:4], features=features)
+        elif feature_type == 'interactive':
+            features_full = compute_interactive_features(scene, hold_lines)
+            N = scene['agent_sequences'].shape[0]
+
+            features = {'mttcp': np.zeros(N), 'collisions': np.zeros(N), 'agent_idxs': []}
+            for n, (i, j) in enumerate(features_full['agent_ids']):
+                if i not in features['agent_idxs']:
+                    features['agent_idxs'].append(i)
+                if j not in features['agent_idxs']:
+                    features['agent_idxs'].append(j)
+                features['mttcp'][i] += 1/(features_full['mttcp'][n]+EPS)
+                features['collisions'][i] += features_full['collisions'][n]
+                
+                features['mttcp'][j] += 1/(features_full['mttcp'][n]+EPS)
+                features['collisions'][j] += features_full['collisions'][n]
+
+            scores = compute_interactive_scores(scene, hold_lines, features=features_full)
+        else:
+            raise ValueError(f"Feature type '{feature_type}' not supported.")       
         
         fsplit = scene_file.split('/')
         scenario_name, scenario_id = fsplit[-2], fsplit[-1].split('.')[0]
