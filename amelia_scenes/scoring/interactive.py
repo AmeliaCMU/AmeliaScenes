@@ -1,11 +1,9 @@
 import itertools
-import networkx as nx
 import numpy as np
 
 import amelia_scenes.utils.common as C
 import amelia_scenes.utils.global_masks as G
 
-from easydict import EasyDict
 from enum import Enum
 from shapely import LineString
 from typing import Tuple, Union
@@ -40,7 +38,7 @@ def compute_interactive_scores(
         features = compute_interactive_features(scene, hold_lines)
 
     def compute_simple_score(idx, eps=1e-5):
-        return 10 * features['collisions'][idx] + min(t_max, 1.0 / (features['mttcp'][idx] + eps)) 
+        return 10 * features['collisions'][idx] + min(t_max, 1.0 / (features['mttcp'][idx] + C.EPS)) 
 
     N = scene['num_agents']
     scores = np.zeros(shape=N)

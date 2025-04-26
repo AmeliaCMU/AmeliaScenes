@@ -54,7 +54,7 @@ def compute_kinematic_scores(
 ):
     # Check if features have been computed
     if not features:
-        features = compute_kinematic_features(scene.agent_sequences, hold_lines)
+        features = compute_kinematic_features(scene, hold_lines)
 
     features_df = pack_kinematic_features(features)
     N, M = features_df.shape
