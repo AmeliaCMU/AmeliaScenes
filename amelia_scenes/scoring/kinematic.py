@@ -100,8 +100,14 @@ def compute_kinematic_scores(
     #         wp_scores[m] * ac_scores[n] - 
     #         wp_nm - (wp_scores[n] / (0.001 + speed_scores[m]))
     #     )
-
     scene_score = scores.max() + scores.mean()
+    
+    # TODO: figure out hot to handle this better later. 
+    num_agents = scene['num_agents']
+    if scores.shape[0] != num_agents:
+        scores_with_invalid_agents = np.zeros(num_agents)
+        scores_with_invalid_agents[idxs] = scores
+        scores = scores_with_invalid_agents
     return scores, scene_score
 
 # --------------------------------------------------------------------------------------------------

@@ -122,7 +122,7 @@ class SceneProcessor:
         ------
             f[str]: name of the file to shard.
         """
-        # print(f"Processing file: {f}")
+        print(f"Processing file: {f}")
         base_name = f.split('/')[-1]
         shard_name = base_name.split('.')[0]
         airport_id = base_name.split('_')[0].lower()
@@ -318,7 +318,7 @@ class SceneProcessor:
             },
             'agent_order': {
                 'random': C.get_random_order(scene['num_agents'], scene['agent_valid'], self.seed),
-                'kinematic': C.get_sorted_order(kin_agents_scores),
+                # 'kinematic': C.get_sorted_order(kin_agents_scores),
                 'interactive': C.get_sorted_order(int_agents_scores),
                 'critical': C.get_sorted_order(crit_agent_scores)
             },
