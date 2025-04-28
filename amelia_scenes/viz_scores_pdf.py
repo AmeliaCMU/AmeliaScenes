@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 import pandas as pd
 import pickle
@@ -8,10 +9,7 @@ import seaborn as sns
 from natsort import natsorted
 from tqdm import tqdm
 
-from amelia_scenes.utils.dataset import load_assets
 from amelia_scenes.utils.common import SUPPORTED_AIRPORTS, ROOT_DIR
-from amelia_scenes.visualization import scene_viz as viz
-from amelia_scenes.visualization.scene_viz import SUPPORTED_SCENES_TYPES
 
 def run(
     airport: str,
@@ -44,13 +42,10 @@ def run(
     out_dir = os.path.join(out_path, airport)
     os.makedirs(out_dir, exist_ok=True)
     score_file = os.path.join(out_dir, 'scores.csv')
+    # If scores have not been collected yet, collect them
     if not os.path.exists(score_file):
         scores = {
-            'filename': [],
-            'crowdedness': [],
-            'kinematic': [],
-            'interactive': [],
-            'critical': []
+            'filename': [], 'crowdedness': [], 'kinematic': [], 'interactive': [], 'critical': []
         }
         for scene_file in tqdm(scene_files):
             with open(scene_file, 'rb') as f:
@@ -69,17 +64,22 @@ def run(
         
         scores_df = pd.DataFrame(scores)
         scores_df.to_csv(score_file, index=False)
+    # Otherwise, load the file 
     else:
         scores_df = pd.read_csv(score_file)
 
+    percs = [0.5, 1.0, 5.0, 10.0, 50.0, 70.0, 80.0, 90.0, 99.5]
     for key in scores_df.keys():
         if key == 'filename':
             continue    
+
+        # Visualize the score densities
         sns.histplot(data=scores_df, x=key, kde=True)
         plt.tight_layout()
         plt.savefig(os.path.join(out_dir, f'{key}_hist.png'), dpi=dpi)
         plt.close()
 
+        # Plot the KDE
         sns.kdeplot(
             data=scores_df[key], label=key, linewidth=2, bw_adjust=5, common_norm=False, cut=0, 
             fill=True, alpha=0.15)
@@ -90,7 +90,14 @@ def run(
         plt.savefig(os.path.join(out_dir, f'{key}_kde.png'), bbox_inches='tight', dpi=300)
         plt.close()
 
-    # TODO: save percentiles and plot scenes in the top 10 and bottom 10 percentiles
+        # Save percentiles
+        percentile_file = os.path.join(out_dir, f'{key}_percentiles.csv')
+        percentile = {
+            'percentiles': percs,
+            'values': [np.percentile(scores_df[key], perc) for perc in percs]
+        }
+        percentile_df = pd.DataFrame(percentile)
+        percentile_df.to_csv(percentile_file, index=False)
 
 if __name__ == "__main__":
     import argparse
