@@ -16,7 +16,7 @@ from typing import Tuple, List
 
 from amelia_scenes.scoring.crowdedness import compute_simple_scene_crowdedness
 from amelia_scenes.scoring.kinematic import compute_kinematic_scores
-from amelia_scenes.scoring.interactive import compute_interactive_scores, compute_collision_masks
+from amelia_scenes.scoring.interactive import compute_interactive_scores
 from amelia_scenes.scoring.critical import compute_simple_scene_critical
 
 class SceneProcessor:
@@ -34,7 +34,6 @@ class SceneProcessor:
         # Trajectory configuration
         self.airport = config.airport
         self.in_data_dir = os.path.join(config.in_data_dir, self.airport)
-        self.bench_data_dir = os.path.join(config.bench_data_dir, self.airport)
         self.out_data_dir = os.path.join(config.out_data_dir, self.airport)
         os.makedirs(self.out_data_dir, exist_ok=True)
         self.blacklist_dir = os.path.join(config.out_data_dir, 'blacklist')
@@ -42,7 +41,6 @@ class SceneProcessor:
 
         self.parallel = config.parallel
         self.overwrite = config.overwrite
-        self.benchmark = config.benchmark
         self.add_scores_meta = config.add_scores_meta
 
         self.seed = config.seed
@@ -69,7 +67,7 @@ class SceneProcessor:
         pickle_map_filepath = os.path.join(graph_data_dir, "semantic_graph.pkl")
         with open(pickle_map_filepath, 'rb') as f:
             graph_pickle = pickle.load(f)
-            self.hold_lines = graph_pickle['hold_lines']
+            self.hold_lines = graph_pickle['hold_lines'][:, 2:4]
             
         self.blacklist = []
         blacklist_file = os.path.join(self.blacklist_dir, f"{self.airport}.txt")
@@ -124,10 +122,7 @@ class SceneProcessor:
         ------
             f[str]: name of the file to shard.
         """
-        if self.benchmark:
-            return self.process_file_bench(f)
-        
-        # print(f"Processing file: {f}")
+        print(f"Processing file: {f}")
         base_name = f.split('/')[-1]
         shard_name = base_name.split('.')[0]
         airport_id = base_name.split('_')[0].lower()
@@ -158,10 +153,6 @@ class SceneProcessor:
 
         valid_seq = 0
         for i in range(0, num_sequences * self.skip + 1, self.skip):
-            # if i == 3154:
-            #     print(i, num_sequences)
-            #     breakpoint()
-
             scenario_id = str(valid_seq).zfill(6)
             seq, agent_id, agent_type, agent_valid, agent_mask = self.process_seq(
                 frame_data=frame_data, frames=frames, seq_idx=i, airport_id=airport_id)
@@ -180,113 +171,7 @@ class SceneProcessor:
                 'agent_masks': agent_mask,
                 'agent_valid': agent_valid,
             }
-            # scene['meta'] = self.process_scores(EasyDict(scene)) if self.add_scores_meta else None
-
-            scene_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
-            with open(scene_filepath, 'wb') as f:
-                pickle.dump(scene, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-            valid_seq += 1
-            sharded_files.append(scene_filepath)
-
-        # If directory is empty, remove it.
-        if len(os.listdir(data_dir)) == 0:
-            blacklist.append(f.removeprefix(self.in_data_dir+'/'))
-            os.rmdir(data_dir)
-        return blacklist
-    
-    def process_file_bench(self, f: str) -> Tuple[List, List, List, List, List, List]:
-        """ Processes a single data file. It first obtains the number of possible sequences (given
-        the parameters in the configuration file) and then generates scene-level pickle files with
-        the corresponding scene's information.
-
-        Inputs
-        ------
-            f[str]: name of the file to shard.
-        """
-        base_name = f.split('/')[-1]
-        shard_name = base_name.split('.')[0]
-        airport_id = base_name.split('_')[0].lower()
-        data_dir = os.path.join(self.out_data_dir, shard_name)
-
-        # Check if the file has been sharded already. If so, add sharded files to the scenario list.
-        if not self.overwrite and (os.path.exists(data_dir) and len(os.listdir(data_dir)) > 0):
-            return None
-
-        # Otherwise, shard the file and add it to the scenario list.
-        data = pd.read_csv(f)
-
-        # Get the number of unique frames
-        bench_file = os.path.join(self.bench_data_dir, base_name)
-        bench = pd.read_csv(bench_file)
-    
-        frames = data.Frame.unique().tolist()
-        # fs, fe = bench.FrameStart.values[0], bench.FrameEnd.values[0]
-        fe = bench.CollisionFrame.values[0]
-        fs = fe - self.seq_len
-        # # frame_start, frame_end = fs, fe
-        frame_start = max(fs - self.seq_extent * self.seq_len, frames[0])
-        frame_end = min(fe + self.seq_extent * self.seq_len, frames[-1])
-        frames = frames[frame_start:frame_end]
-
-        frame_data = []
-        for frame_num in frames:
-            frame = data[:][data.Frame == frame_num]
-            frame_data.append(frame)
-
-        blacklist = []
-        num_sequences = int(math.ceil((len(frames) - (self.seq_len) + 1) / self.skip))
-        if num_sequences < 1:
-            blacklist.append(f.removeprefix(self.in_data_dir+'/'))
-            return blacklist
-        
-        bench_agents = [int(agent) for agent in bench.AgentIDs.values[0].split(';')]
-        benchmark = {
-            'frame_start': fs,
-            'frame_start_ext': frame_start,
-            'frame_end': fe,
-            'frame_end_ext': frame_end,
-            'collision_frame': fe,
-            'bench_agents': bench_agents,
-            'date': bench.Date,
-            'airport': bench.Airport
-        }
-
-        sharded_files = []
-        os.makedirs(data_dir, exist_ok=True)
-
-        valid_seq = 0
-        for i in range(0, num_sequences * self.skip + 1, self.skip):
-            scenario_id = str(valid_seq).zfill(6)
-            seq, agent_id, agent_type, agent_valid, agent_mask = self.process_seq(
-                frame_data=frame_data, frames=frames, seq_idx=i, airport_id=airport_id)
-            if seq is None:
-                continue
-
-            # Get agent array based on random and safety criteria
-            num_agents, _, _ = seq.shape
-
-            # NOTE: 
-            #              -inf --> invalid data points (interp, padding)
-            #              inf  --> invalid data points (not in conflict)
-            #   any other value --> collision / time-to-conflict-point
-            coll_masks = compute_collision_masks(seq, agent_type, agent_mask)
-            benchmark['collision_mask'] = coll_masks['collisions']
-            benchmark['mttcp_mask'] = coll_masks['mttcp']
-            benchmark['timestep'] = (num_sequences - i) / num_sequences
-
-            scene = {
-                'scenario_id': scenario_id,
-                'num_agents': num_agents,
-                'airport_id': airport_id,
-                'agent_sequences': seq,
-                'agent_ids': agent_id,
-                'agent_types': agent_type,
-                'agent_masks': agent_mask,
-                'agent_valid': agent_valid,
-                'benchmark': benchmark
-            }
-            # scene['meta'] = self.process_scores(EasyDict(scene)) if self.add_scores_meta else None
+            scene['meta'] = self.process_scores(scene) if self.add_scores_meta else None
 
             scene_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
             with open(scene_filepath, 'wb') as f:
@@ -337,7 +222,7 @@ class SceneProcessor:
         # IDs of agents in the current sequence
         unique_agents = np.unique(seq_data[:, G.RAW_IDX.ID])
         num_agents = len(unique_agents)
-        if not self.benchmark and (num_agents < self.min_agents or num_agents > self.max_agents):
+        if num_agents < self.min_agents or num_agents > self.max_agents:
             return none_outs
 
         num_agents_considered = 0
@@ -425,7 +310,6 @@ class SceneProcessor:
             agent_scores_list=[kin_agents_scores.copy(), int_agents_scores].copy(),
             scene_score_list=[crowd_scene_score.copy(), kin_scene_score.copy(), int_scene_score.copy()]
         )
-        # breakpoint()
         return  {
             'agent_scores': {
                 'kinematic': kin_agents_scores,
@@ -433,8 +317,8 @@ class SceneProcessor:
                 'critical': crit_agent_scores
             },
             'agent_order': {
-                'random': C.get_random_order(scene.num_agents, scene.agent_valid, self.seed),
-                'kinematic': C.get_sorted_order(kin_agents_scores),
+                'random': C.get_random_order(scene['num_agents'], scene['agent_valid'], self.seed),
+                # 'kinematic': C.get_sorted_order(kin_agents_scores),
                 'interactive': C.get_sorted_order(int_agents_scores),
                 'critical': C.get_sorted_order(crit_agent_scores)
             },
