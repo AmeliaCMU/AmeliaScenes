@@ -47,10 +47,12 @@ def compute_kinematic_scores(
     scene: dict,
     hold_lines: np.array,
     features: dict = {},
-    max_wp: float = 20.0,     # Roughly, 50 seconds waiting 5m from the hold line (x2)
-    max_speed: float = 90.0,  # Takeoff speed is 100-160 knots, so setting max to 90 m/s (160 knots) 
-    max_acc: float = 5.0,     # Approx, 3.4 m/s^2 is the max acceleration of a commercial aircraft
-    max_jerk: float = 10.0,   # Set empirically, not sure about this value
+    max_wp: float = 20.0,    # Roughly, 50 seconds waiting 5m from the hold line (x2)
+    max_speed: float = 100.0, # Takeoff speed is 100-160 knots, so setting max to 90 m/s (160 knots) 
+    max_acc: float = 70.0,   # Approx, 3.4 m/s^2 is the max acceleration of a commercial aircraft
+    max_jerk: float = 10.0,  # Set empirically, not sure about this value
+    acc_scale: float = 0.1,  # Ugh, somewhat arbitrary scaling factor for acceleration 
+    speed_scale: float = 0.1, # Ugh, somewhat arbitrary scaling factor for speed
 ):
     # Check if features have been computed
     if not features:
@@ -70,36 +72,18 @@ def compute_kinematic_scores(
     # jerk score
     jerk_scores = features_df.jerk.clip(lower=0.0, upper=max_jerk) #/ max_jerk
 
-    # acceleration score
+    # acceleration score TODO: verify this feature
     acc_scores = features_df.acceleration_rate.clip(lower=0.0, upper=max_acc) 
     dec_scores = features_df.deceleration_rate.clip(lower=0.0, upper=max_acc) 
-    ac_scores = (acc_scores + dec_scores + acc_scores * dec_scores) #/ (2 * max_acc + max_acc ** 2)
-    
-    # speed score
-    speed_scores = features_df.speed.clip(lower=0.0, upper=max_speed) #/ max_speed
+    ac_scores = acc_scale * (acc_scores + dec_scores + acc_scores * dec_scores)
+
+    # speed score NOTE: not a very informative feature
+    speed_scores = speed_scale * features_df.speed.clip(lower=0.0, upper=max_speed)
 
     # overall score
     scores = weights * (wp_scores + ac_scores + speed_scores + jerk_scores).to_numpy()
-    # agent_combinations = list(itertools.combinations(range(N), 2))
     
     # NOTE: Debugging agent pairing score. Scale is too big
-    # for n, m in agent_combinations:
-    #     # scores[n] += (ac_scores[n] * wp_scores[m]) - (wp_scores[n] * wp_scores[m])
-    #     wp_nm = wp_scores[n] * wp_scores[m]
-    #     wp_np = wp_scores[m] / (0.001 + speed_scores[n])
-    #     # reward = ac_scores[n] * wp_scores[m] + ac_scores[m] * wp_scores[n]
-    #     # scores[n] += (reward - penalty)
-    #     # scores[m] += (reward - penalty)
-    #     scores[n] += (
-    #         ac_scores[n] * wp_scores[m] + 
-    #         wp_scores[n] * ac_scores[m] - 
-    #         wp_nm - (wp_scores[m] / (0.001 + speed_scores[n]))
-    #     )
-    #     scores[m] += (
-    #         ac_scores[m] * wp_scores[n] + 
-    #         wp_scores[m] * ac_scores[n] - 
-    #         wp_nm - (wp_scores[n] / (0.001 + speed_scores[m]))
-    #     )
     scene_score = scores.max() + scores.mean()
     
     # TODO: figure out hot to handle this better later. 

@@ -32,13 +32,13 @@ def compute_interactive_scores(
     scene: dict,
     hold_lines: np.array,
     features: dict = {},
-    t_max: float = 60.0
+    ttcp_thresh: float = 10.0
 ):
     if not features:
         features = compute_interactive_features(scene, hold_lines)
 
-    def compute_simple_score(idx, eps=1e-5):
-        return 10 * features['collisions'][idx] + min(t_max, 1.0 / (features['mttcp'][idx] + C.EPS)) 
+    def compute_simple_score(idx):
+        return features['collisions'][idx] + min(ttcp_thresh, 1.0 / (features['mttcp'][idx] + C.EPS))
 
     N = scene['num_agents']
     scores = np.zeros(shape=N)
@@ -48,11 +48,13 @@ def compute_interactive_scores(
             continue
         agent_i, agent_j = features['agent_types'][n]
 
-        score_n = C.WEIGHTS[agent_i] * C.WEIGHTS[agent_j] * (compute_simple_score(n) / t_max)
+        score_n = C.WEIGHTS[agent_i] * C.WEIGHTS[agent_j] * compute_simple_score(n)
         scores[i] += score_n
         scores[j] += score_n
 
-    scene_score = scores.max() + scores.mean()
+    # map the final score to a range of [0, 100]
+    
+    scene_score = (scores.max() + scores.mean()) 
     return scores, scene_score
 
 # --------------------------------------------------------------------------------------------------

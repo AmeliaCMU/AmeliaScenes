@@ -19,7 +19,8 @@ def run(
     num_scenes: int,
     perc: float,
     seed: int,
-    dpi: int
+    dpi: int,
+    reprocess: bool,
 ):
     traj_data_dir = f"traj_data_{traj_version}" 
 
@@ -43,7 +44,7 @@ def run(
     os.makedirs(out_dir, exist_ok=True)
     score_file = os.path.join(out_dir, 'scores.csv')
     # If scores have not been collected yet, collect them
-    if not os.path.exists(score_file):
+    if reprocess or not os.path.exists(score_file):
         scores = {
             'filename': [], 'crowdedness': [], 'kinematic': [], 'interactive': [], 'critical': []
         }
@@ -141,5 +142,8 @@ if __name__ == "__main__":
         type=int,
         default=400,
         help="Random seed.")
+    parser.add_argument(
+        "--reprocess",
+        action='store_true')
     args = parser.parse_args()
     run(**vars(args))
