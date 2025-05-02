@@ -9,14 +9,14 @@ airport: ksfo # ICAO code or use keyword all for all airports
 base_dir: datasets/amelia
 traj_version: a10v08
 graph_version: a10v01os
-out_version: v01 # Set to null to omit versioning for output
+out_version: with_timezone # Set to null to omit versioning for output
 
 # PROCESSING SETTINGS
-parallel: true
+parallel: false
 overwrite: true
 benchmark: false
 xplane: false
-perc_process: 1.0
+perc_process: 0.1
 seed: 42
 jobs: -1
 

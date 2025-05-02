@@ -8,17 +8,48 @@ import imageio
 import numpy as np
 
 from math import floor
-from typing import Tuple
+from pathlib import Path
 from easydict import EasyDict
 from natsort import natsorted
+from zoneinfo import ZoneInfo
+from typing import Tuple, Dict
 from amelia_scenes.utils import common
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
-
-def _process_timestamp(scene_ts: str, frame_idx: int, airport_code: str) -> tuple(str, str):
-    """ Given a UNIX timestamp, it calculates current time given a frame index (seconds) and also returns the localtime"""
+def _get_file_timestamp(filepath: str) -> str:
+    stem = Path(filepath).stem
+    _, _, scene_ts = stem.split("_")
+    unix_epoch = int(scene_ts)
+    return unix_epoch
     
-
+def _process_timestamp(scene_ts: int, frame_idx: int, airport_code: str, MAX_INTERVAL = 3600 ) -> dict:
+    """ Given a UNIX timestamp, it calculates current time given a frame index (seconds) and also returns the localtime"""
+    use_localtime = True
+    local_time = None
+    try:
+        airport_tz = common._AIRPORTS_TZ[airport_code.upper()]["tz"]
+    except KeyError:
+        use_localtime = False
+    # Parse time at frame
+    base_time = datetime.fromtimestamp(scene_ts, tz=timezone.utc)
+    time_at_frame = base_time + timedelta(seconds=frame_idx)
+    unix_epoch = int(time_at_frame.timestamp())
+    # Sanity check
+    if abs(unix_epoch - scene_ts) > MAX_INTERVAL:
+        print(f"Warning: Time difference between scene timestamp and frame index is too large ({abs(unix_epoch - int(scene_ts))} seconds).")
+        raise ValueError("Time difference exceeds maximum interval.")
+    # If possible, convert to local time
+    if use_localtime:
+        local_time = time_at_frame.astimezone(ZoneInfo(airport_tz))
+    # Build output dictionary
+    time_dict = {
+        "timezone": airport_tz,
+        "unix_epoch": unix_epoch,
+        "utc_iso": base_time.isoformat(),
+        "local_iso": local_time.isoformat() if use_localtime else None
+    }   
+    return time_dict
+    
 def load_assets(input_dir: str, airport: str, graph_file: str = "graph_data_a10v01os") -> Tuple:
     # Graph
     graph_data_dir = os.path.join(input_dir, graph_file, airport)
