@@ -1,15 +1,15 @@
 defaults:
   - _self_
-  - mode: full        # Pick type of processing to run
+  - mode: full  # Pick type of processing to run ["full", "metas", "scenes"]
   - override hydra/job_logging: disabled
   - override hydra/hydra_logging: disabled # Disable output log
 
 # SETUP PATH NAMES
-airport: ksfo # ICAO code or all for all airports
+airport: ksfo # ICAO code or use keyword all for all airports
 base_dir: datasets/amelia
 traj_version: a10v08
 graph_version: a10v01os
-out_version: a10v01
+out_version: v01 # Set to null to omit versioning for output
 
 # PROCESSING SETTINGS
 parallel: true

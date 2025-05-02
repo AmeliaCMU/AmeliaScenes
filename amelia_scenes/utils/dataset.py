@@ -1,22 +1,23 @@
+import os
 import cv2
-import imageio
 import glob
 import json
-import numpy as np
-import os
 import pickle
 import random
+import imageio
+import numpy as np
 
-
-from datetime import datetime, timezone
-from easydict import EasyDict
 from math import floor
-from natsort import natsorted
-
 from typing import Tuple
-
+from easydict import EasyDict
+from natsort import natsorted
 from amelia_scenes.utils import common
+from datetime import datetime, timezone
 
+
+def _process_timestamp(scene_ts: str, frame_idx: int, airport_code: str) -> tuple(str, str):
+    """ Given a UNIX timestamp, it calculates current time given a frame index (seconds) and also returns the localtime"""
+    
 
 def load_assets(input_dir: str, airport: str, graph_file: str = "graph_data_a10v01os") -> Tuple:
     # Graph
