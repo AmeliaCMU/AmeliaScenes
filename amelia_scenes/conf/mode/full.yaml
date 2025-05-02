@@ -1,0 +1,4 @@
+# @package _global_
+_target_: amelia_scenes.processing.scene_processor.SceneProcessor
+add_scores_meta: true
+to_process: full

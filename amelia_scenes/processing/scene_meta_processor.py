@@ -1,18 +1,18 @@
-import json
 import os
+import json
 import pickle
 
 import amelia_scenes.utils.common as C
 
-from easydict import EasyDict
-from joblib import Parallel, delayed
 from tqdm import tqdm
+from easydict import EasyDict
 from typing import Tuple, List
+from joblib import Parallel, delayed
 
-from amelia_scenes.scoring.crowdedness import compute_simple_scene_crowdedness
 from amelia_scenes.scoring.kinematic import compute_kinematic_scores
-from amelia_scenes.scoring.interactive import compute_interactive_scores
 from amelia_scenes.scoring.critical import compute_simple_scene_critical
+from amelia_scenes.scoring.interactive import compute_interactive_scores
+from amelia_scenes.scoring.crowdedness import compute_simple_scene_crowdedness
 
 class SceneMetaProcessor:
     """ Dataset class for pre-processing meta data for airport surface movement scenes. Assumes that
