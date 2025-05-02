@@ -177,7 +177,6 @@ class SceneProcessor:
                 'agent_valid': agent_valid,
                 'time_meta': time_meta,
             }
-            breakpoint()
             scene['meta'] = self.process_scores(scene) if self.add_scores_meta else None
             scene_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
             with open(scene_filepath, 'wb') as f:

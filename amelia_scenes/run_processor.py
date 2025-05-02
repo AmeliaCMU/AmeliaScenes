@@ -4,7 +4,7 @@ import copy
 import amelia_scenes.utils.common as C
 
 from easydict import EasyDict
-from omegaconf import DictConfig, OmegaConf, open_dict
+from omegaconf import DictConfig, OmegaConf, open_dict, ListConfig
 
 def _build_paths(cfg: DictConfig) -> None:
     """Derive all path fields in-place from high-level flags."""
@@ -31,18 +31,26 @@ def _build_paths(cfg: DictConfig) -> None:
     
     # Make sure the output directory exists
     os.makedirs(cfg.out_data_dir, exist_ok=True)
+    
+def _parse_airport(airport, supported_airports=None) -> list:
+    if isinstance(airport, str):
+        airports = supported_airports if airport == "all" else [airport]
+    elif not isinstance(airport, ListConfig):
+        raise ValueError("Airport must be a string or a list of strings.")
+    airports = list(airport)
+    assert set(airports).issubset(supported_airports), f"[ ERROR ] Airport {cfg.airport} not supported!"
+    return airports
 
 @hydra.main(config_path="conf", config_name="processor_conf", version_base=None)
 def run(cfg: DictConfig) -> None:
     # Load airport
     supported_airports = C.get_available_airports(cfg.base_dir)
-    airports = supported_airports if cfg.airport == "all" else [cfg.airport]
-
+    airports = _parse_airport(cfg.airport, supported_airports)
+ 
     # Sanity checks
     assert not (cfg.benchmark and cfg.xplane), "[ ERROR ]Cannot use both benchmark and xplane!"
     assert len(airports) > 0, "[ ERROR ] No airports found, check paths!"
     assert cfg.to_process in ["scenes", "metas", "full"], "[ ERROR ] Invalid processing mode!"
-    assert set(airports).issubset(supported_airports), f"[ ERROR ] Airport {cfg.airport} not supported!"
     
     # Run processor for each airport
     for airport in airports:

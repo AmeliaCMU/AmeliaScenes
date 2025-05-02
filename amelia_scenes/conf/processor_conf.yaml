@@ -1,29 +1,6 @@
 defaults:
   - _self_
   - mode: full  # Pick type of processing to run ["full", "metas", "scenes"]
+  - presets: sample  # Pick a preset to run ["amelia_10", "amelia_48", "sample"]
   - override hydra/job_logging: disabled
-  - override hydra/hydra_logging: disabled # Disable output log
-
-# SETUP PATH NAMES
-airport: ksfo # ICAO code or use keyword all for all airports
-base_dir: datasets/amelia
-traj_version: a10v08
-graph_version: a10v01os
-out_version: with_timezone # Set to null to omit versioning for output
-
-# PROCESSING SETTINGS
-parallel: false
-overwrite: true
-benchmark: false
-xplane: false
-perc_process: 0.1
-seed: 42
-jobs: -1
-
-# SCENE PROCESSING SETTINGS
-pred_lens: [20, 50]
-hist_len: 10
-skip: 1
-min_agents: 2
-max_agents: 40
-min_valid_points: 2
+  - override hydra/hydra_logging: disabled # Disable output logging
