@@ -26,6 +26,7 @@ dependencies = [
     "matplotlib==3.7.1",
     "scipy==1.9.1",
     "pyproj==3.6.1",
+    "huggingface_hub"
 ]
 
 authors = [
