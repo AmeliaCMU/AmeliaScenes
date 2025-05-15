@@ -93,7 +93,7 @@ class SceneProcessor:
         print(f"Processing data for airport {self.airport.upper()}.")
         if self.parallel:
             scenes = Parallel(n_jobs=self.n_jobs)(
-                delayed(self.process_file)(f) for f in tqdm(self.data_files[:10]))
+                delayed(self.process_file)(f) for f in tqdm(self.data_files))
             # Unpacking results
             for i in range(len(scenes)):
                 res = scenes.pop()
