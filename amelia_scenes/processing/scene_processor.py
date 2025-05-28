@@ -1,23 +1,24 @@
+import os
 import json
 import math
-import numpy as np
-import os
-import pandas as pd
 import pickle
 import random
+import numpy as np
+import pandas as pd
 
-import amelia_scenes.utils.global_masks as G
 import amelia_scenes.utils.common as C
+import amelia_scenes.utils.dataset as D
+import amelia_scenes.utils.global_masks as G
 
-from easydict import EasyDict
-from joblib import Parallel, delayed
 from tqdm import tqdm
+from easydict import EasyDict
 from typing import Tuple, List
+from joblib import Parallel, delayed
 
-from amelia_scenes.scoring.crowdedness import compute_simple_scene_crowdedness
 from amelia_scenes.scoring.kinematic import compute_kinematic_scores
-from amelia_scenes.scoring.interactive import compute_interactive_scores
 from amelia_scenes.scoring.critical import compute_simple_scene_critical
+from amelia_scenes.scoring.interactive import compute_interactive_scores
+from amelia_scenes.scoring.crowdedness import compute_simple_scene_crowdedness
 
 class SceneProcessor:
     """ Dataset class for pre-processing airport surface movement data into scenes. """
@@ -126,8 +127,8 @@ class SceneProcessor:
         base_name = f.split('/')[-1]
         shard_name = base_name.split('.')[0]
         airport_id = base_name.split('_')[0].lower()
+        file_time = D._get_file_timestamp(base_name)
         data_dir = os.path.join(self.out_data_dir, shard_name)
-
         # Check if the file has been sharded already. If so, add sharded files to the scenario list.
         if not self.overwrite and (os.path.exists(data_dir) and len(os.listdir(data_dir)) > 0):
             return None
@@ -158,9 +159,13 @@ class SceneProcessor:
                 frame_data=frame_data, frames=frames, seq_idx=i, airport_id=airport_id)
             if seq is None:
                 continue
-
             # Get agent array based on random and safety criteria
             num_agents, _, _ = seq.shape
+            time_meta = D._process_timestamp(
+                scene_ts=file_time, 
+                frame_idx=i, 
+                airport_code=airport_id
+            )
             scene = {
                 'scenario_id': scenario_id,
                 'num_agents': num_agents,
@@ -170,9 +175,9 @@ class SceneProcessor:
                 'agent_types': agent_type,
                 'agent_masks': agent_mask,
                 'agent_valid': agent_valid,
+                'time_meta': time_meta,
             }
             scene['meta'] = self.process_scores(scene) if self.add_scores_meta else None
-
             scene_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
             with open(scene_filepath, 'wb') as f:
                 pickle.dump(scene, f, protocol=pickle.HIGHEST_PROTOCOL)

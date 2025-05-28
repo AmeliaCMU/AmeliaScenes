@@ -1,96 +1,72 @@
 import os
-
-from easydict import EasyDict
-
+import hydra
+import copy
 import amelia_scenes.utils.common as C
 
+from easydict import EasyDict
+from omegaconf import DictConfig, OmegaConf, open_dict, ListConfig
 
-def run(
-    airport: str,
-    base_dir: str,
-    traj_version: str,
-    graph_version: str,
-    parallel: bool,
-    overwrite: bool,
-    benchmark: bool,
-    xplane: bool,
-    perc_process: float,
-    to_process: str,
-    seed: int,
-    jobs: int
-) -> None:
-    assert not (benchmark and xplane)
-    tag = 'benchmark' if benchmark else 'xplane' if xplane else traj_version
-    traj_data_dir = f"traj_data_{tag}"
-    bench_data_dir = os.path.join(base_dir, traj_data_dir, 'benchmark')
-    add_scores_meta = False
-    if to_process == 'scenes':
-        from amelia_scenes.processing.scene_processor import SceneProcessor as Pr
-        in_data_dir = os.path.join(base_dir, traj_data_dir, 'raw_trajectories')
-        out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes')
-    elif to_process == 'metas':
-        from amelia_scenes.processing.scene_meta_processor import SceneMetaProcessor as Pr
-        in_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes')
-        out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_scenes_meta')
-    else:
-        from amelia_scenes.processing.scene_processor import SceneProcessor as Pr
-        add_scores_meta = True
-        in_data_dir = os.path.join(base_dir, traj_data_dir, 'raw_trajectories')
-        out_data_dir = os.path.join(base_dir, traj_data_dir, 'proc_full_scenes')
+def _build_paths(cfg: DictConfig) -> None:
+    """Derive all path fields in-place from high-level flags."""
+    tag = "benchmark" if cfg.benchmark else "xplane" if cfg.xplane else cfg.traj_version
+    traj_dir = f"traj_data_{tag}"
+    # Add paths to config dictionary
+    with open_dict(cfg):
+        # Add  source data directories
+        cfg.in_data_dir  = os.path.join(cfg.base_dir, traj_dir,
+                                        "raw_trajectories" if cfg.to_process in ["scenes", "full"]
+                                        else "proc_scenes")
+        # Make output directories
+        out_dir = os.path.join(cfg.base_dir, traj_dir,
+                                        {"scenes": f"proc_scenes",
+                                        "metas" : f"proc_scenes_metas",
+                                        "full"  : f"proc_full_scenes"}[cfg.to_process])
+        if cfg.out_version is not None:
+            out_dir = f"{out_dir}_{cfg.out_version}"
+        cfg.out_data_dir = out_dir
+        # Add assets directory
+        cfg.bench_data_dir = os.path.join(cfg.base_dir, traj_dir, "benchmark")
+        cfg.graph_data_dir = os.path.join(cfg.base_dir, f"graph_data_{cfg.graph_version}")
+        cfg.assets_dir     = os.path.join(cfg.base_dir, "assets")
+    
+    # Make sure the output directory exists
+    os.makedirs(cfg.out_data_dir, exist_ok=True)
+    
+def _parse_airport(airport, supported_airports=None) -> list:
+    if isinstance(airport, str):
+        airports = supported_airports if airport == "all" else [airport]
+    elif not isinstance(airport, ListConfig):
+        raise ValueError("Airport must be a string or a list of strings.")
+    airports = list(airport)
+    assert set(airports).issubset(supported_airports), f"[ ERROR ] Airport {cfg.airport} not supported!"
+    return airports
 
-    # TODO: provide configs as YAML files
-    config = EasyDict({
-        "airport": airport,
-        "in_data_dir": in_data_dir,
-        "out_data_dir": out_data_dir,
-        "bench_data_dir": bench_data_dir,
-        'graph_data_dir': os.path.join(base_dir,  f"graph_data_{graph_version}"),
-        "assets_dir": os.path.join(base_dir, 'assets'),
-        "parallel": parallel,
-        "perc_process": perc_process,
-        'overwrite': overwrite,
-        "benchmark": benchmark | xplane,
-        "add_scores_meta": add_scores_meta,
-        "pred_lens": [20, 50],
-        "hist_len": 10,
-        "skip": 1,
-        "min_agents": 2,
-        "max_agents": 40,
-        "min_valid_points": 2,
-        "seed": seed,
-        "jobs": jobs
-    })
-    try:
-        Pr(config=config).process_data()
-    except Exception as e:
-        print(f"Error processing {airport}: {e}")
-
+@hydra.main(config_path="conf", config_name="processor_conf", version_base=None)
+def run(cfg: DictConfig) -> None:
+    # Load airport
+    supported_airports = C.get_available_airports(cfg.base_dir)
+    airports = _parse_airport(cfg.airport, supported_airports)
+ 
+    # Sanity checks
+    assert not (cfg.benchmark and cfg.xplane), "[ ERROR ]Cannot use both benchmark and xplane!"
+    assert len(airports) > 0, "[ ERROR ] No airports found, check paths!"
+    assert cfg.to_process in ["scenes", "metas", "full"], "[ ERROR ] Invalid processing mode!"
+    
+    # Run processor for each airport
+    for airport in airports:
+        cfg_one = copy.deepcopy(cfg)   # Modify config for compatibility with each airport.
+        cfg_one.airport = airport
+        _build_paths(cfg_one)
+        print(f"\033[93m[INFO]\033[0m Processing airport: {cfg_one.airport}")
+        for key, value in cfg_one.items():
+            print(f"\033[94m{key}\033[0m: \033[97m{value}\033[0m")
+            
+        # Intantiate processor     
+        processor_cls = hydra.utils.get_class(cfg_one._target_)
+        try:
+            processor_cls(config=cfg_one).process_data()
+        except Exception as e:
+            print(f"Error processing {airport}: {e}")
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--airport", type=str, default='all')
-    parser.add_argument("--base_dir", type=str, default=f"{C.ROOT_DIR}/datasets/amelia")
-    parser.add_argument("--traj_version", type=str, default="a10v08")
-    parser.add_argument("--graph_version", type=str, default="a10v01os")
-    parser.add_argument("--parallel", action='store_true')
-    parser.add_argument("--overwrite", action='store_true')
-    parser.add_argument("--benchmark", action='store_true')
-    parser.add_argument("--xplane", action='store_true')
-    parser.add_argument("--perc_process", type=float, default=1.0)
-    parser.add_argument("--to_process", default='all', choices=['scenes', 'metas', 'all'])
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--jobs", type=int, default=-1)
-    args = parser.parse_args()
-
-    supported_airports = C.get_available_airports(args.base_dir)
-
-    if args.airport == 'all':
-        kargs = vars(args)
-        for airport in supported_airports:
-            kargs['airport'] = airport
-            run(**kargs)
-    elif args.airport in supported_airports:
-        run(**vars(args))
-    else:
-        raise ValueError(f"Airport {args.airport} not found in {args.base_dir}")
+    run()

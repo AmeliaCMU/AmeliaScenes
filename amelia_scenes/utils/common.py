@@ -1,16 +1,17 @@
-import cv2
 import os
+import cv2
 import glob
+import random
 import numpy as np
 import pandas as pd
-import random
-
+from airportsdata import load as tz_load
 
 from typing import Tuple
 
 np.set_printoptions(suppress=True)
 pd.options.mode.chained_assignment = None
 
+_AIRPORTS_TZ = tz_load("ICAO")
 # TODO: same as the global_masks.py, avoid copying these global variables to each module.
 OTHER = -1
 AIRCRAFT = 0
