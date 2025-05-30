@@ -29,7 +29,7 @@ def run(
 ):
     assets = load_assets(base_path, airport)
     tag = 'benchmark' if benchmark else 'xplane' if xplane else traj_version
-    traj_data_dir = f"traj_data_{tag}" 
+    traj_data_dir = f"traj_data_{tag}"
 
     scenes_dir = os.path.join(base_path, traj_data_dir, 'proc_full_scenes', airport)
     scenes_subdirs = [
@@ -53,13 +53,13 @@ def run(
 
     scores_list = []
     scenes_data = []
-    
+
     for scene_file in tqdm(scene_files):
         with open(scene_file, 'rb') as f:
             scene = pickle.load(f)
         # Extract score from scene; adjust based on your scene structure
         score = scene["meta"]["scene_scores"]["critical"]
-        
+
         if score is not None:
             scores_list.append(score)
             scenes_data.append((scene_file, scene, score))
@@ -71,9 +71,9 @@ def run(
     single_percentile = np.percentile(scores_list, percentile)
     print(f"The {percentile} percentile score is:", single_percentile)
 
-    scenes_in_percentile = [ (scene_file, scene) 
-                            for scene_file, scene, score in scenes_data 
-                            if score >= single_percentile ]
+    scenes_in_percentile = [(scene_file, scene)
+                            for scene_file, scene, score in scenes_data
+                            if score >= single_percentile]
 
     print(f"Found {len(scenes_in_percentile)}")
     for scene_file, scene in scenes_in_percentile:
@@ -84,7 +84,7 @@ def run(
         if id > 250 or id < 220:
             continue
         filetag = os.path.join(out_dir, f"{scenario_name}_{scenario_id}.png")
-        viz.plot_scene(scene, assets, filetag, scene_type, dpi=200, scores= None)
+        viz.plot_scene(scene, assets, filetag, scene_type, dpi=200, scores=None)
 
 
 if __name__ == "__main__":
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--traj_version",
         type=str,
-        default="a48v01")
+        default="a42v01")
     parser.add_argument(
         "--out_path",
         type=str,
@@ -123,7 +123,7 @@ if __name__ == "__main__":
         "--benchmark",
         action='store_true')
     parser.add_argument(
-        "--xplane", 
+        "--xplane",
         action='store_true')
     parser.add_argument(
         "--scene_type",

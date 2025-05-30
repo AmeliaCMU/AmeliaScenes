@@ -20,6 +20,7 @@ from amelia_scenes.scoring.critical import compute_simple_scene_critical
 from amelia_scenes.scoring.interactive import compute_interactive_scores
 from amelia_scenes.scoring.crowdedness import compute_simple_scene_crowdedness
 
+
 class SceneProcessor:
     """ Dataset class for pre-processing airport surface movement data into scenes. """
 
@@ -39,6 +40,8 @@ class SceneProcessor:
         os.makedirs(self.out_data_dir, exist_ok=True)
         self.blacklist_dir = os.path.join(config.out_data_dir, 'blacklist')
         os.makedirs(self.blacklist_dir, exist_ok=True)
+        self.out_data_summary_dir = os.path.join(config.out_summary_dir, self.airport)
+        os.makedirs(self.out_data_summary_dir, exist_ok=True)
 
         self.parallel = config.parallel
         self.overwrite = config.overwrite
@@ -59,6 +62,11 @@ class SceneProcessor:
 
         self.n_jobs = config.jobs
 
+        self.data_summary = EasyDict({
+            'scores': [],
+            'num_scenes': 0,
+            'files_scores': []})
+
         limits_file = os.path.join(config.assets_dir, self.airport, 'limits.json')
         with open(limits_file, 'r') as fp:
             self.ref_data = EasyDict(json.load(fp))
@@ -69,7 +77,7 @@ class SceneProcessor:
         with open(pickle_map_filepath, 'rb') as f:
             graph_pickle = pickle.load(f)
             self.hold_lines = graph_pickle['hold_lines'][:, 2:4]
-            
+
         self.blacklist = []
         blacklist_file = os.path.join(self.blacklist_dir, f"{self.airport}.txt")
         if os.path.exists(blacklist_file) and not self.overwrite:
@@ -93,7 +101,7 @@ class SceneProcessor:
         """
         print(f"Processing data for airport {self.airport.upper()}.")
         if self.parallel:
-            scenes = Parallel(n_jobs=self.n_jobs)(
+            scenes = Parallel(n_jobs=self.n_jobs, require="sharedmem")(
                 delayed(self.process_file)(f) for f in tqdm(self.data_files))
             # Unpacking results
             for i in range(len(scenes)):
@@ -113,6 +121,9 @@ class SceneProcessor:
         blacklist_file = os.path.join(self.blacklist_dir, f'{self.airport}.txt')
         with open(blacklist_file, 'w') as fp:
             fp.write('\n'.join(self.blacklist))
+
+        # get data percentiles
+        self.data_percentiles()
 
     def process_file(self, f: str) -> Tuple[List, List, List, List, List, List]:
         """ Processes a single data file. It first obtains the number of possible sequences (given
@@ -162,8 +173,8 @@ class SceneProcessor:
             # Get agent array based on random and safety criteria
             num_agents, _, _ = seq.shape
             time_meta = D._process_timestamp(
-                scene_ts=file_time, 
-                frame_idx=i, 
+                scene_ts=file_time,
+                frame_idx=i,
                 airport_code=airport_id
             )
             scene = {
@@ -177,7 +188,15 @@ class SceneProcessor:
                 'agent_valid': agent_valid,
                 'time_meta': time_meta,
             }
-            scene['meta'] = self.process_scores(scene) if self.add_scores_meta else None
+            scene['meta'] = None
+            if self.add_scores_meta:
+                scene['meta'] = self.process_scores(scene)
+                score = scene['meta']['scene_scores']['critical']
+                self.data_summary.scores += [score]
+                self.data_summary.num_scenes += 1
+                self.data_summary.files_scores += [(score, os.path.join(
+                    shard_name, f"{scenario_id}_n-{num_agents}.pkl"))]
+
             scene_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
             with open(scene_filepath, 'wb') as f:
                 pickle.dump(scene, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -219,7 +238,7 @@ class SceneProcessor:
         # If the speed of all agents is zero or close, return None
         if math.isclose(seq_data[:, G.RAW_IDX.Speed].sum(), 0):
             return none_outs
-        
+
         # If there are no aircraft in the sequence, return None
         if not np.isin(seq_data[:, G.RAW_IDX.Type].astype(int), C.AIRCRAFT).sum():
             return none_outs
@@ -276,7 +295,7 @@ class SceneProcessor:
             valid_agent_list.append(valid)
 
             # TODO: Impute needs to be debugged. Imputing should not happen since it was done in SWIM.
-            agent_seq = C.impute(agent_seq, pad_end - pad_front)# self.seq_len)
+            agent_seq = C.impute(agent_seq, pad_end - pad_front)  # self.seq_len)
             valid_mask = agent_seq[:, G.RAW_IDX.Interp].astype(bool)
             agent_masks[num_agents_considered, pad_front:pad_end] = valid_mask
 
@@ -293,20 +312,19 @@ class SceneProcessor:
         if num_agents_considered < self.min_agents:
             return none_outs
 
-        return seq[:num_agents_considered], agent_id_list, agent_type_list, valid_agent_list, \
-            agent_masks[:num_agents_considered]
+        return seq[:num_agents_considered], agent_id_list, agent_type_list, valid_agent_list, agent_masks[:num_agents_considered]
 
     def process_scores(self, scene):
         """ Computes kinematic and interactive scores for all valid agent sequences.
 
         Inputs:
         -------
-            scene[dict]: dictionary containing agent sequences and meta information. 
+            scene[dict]: dictionary containing agent sequences and meta information.
 
         Outputs:
         --------
-            scores[dict]: dictionary containing individual and interactive scores for each agent, 
-            and scene scores. 
+            scores[dict]: dictionary containing individual and interactive scores for each agent,
+            and scene scores.
         """
         crowd_scene_score = compute_simple_scene_crowdedness(scene, self.max_agents)
         kin_agents_scores, kin_scene_score = compute_kinematic_scores(scene, self.hold_lines)
@@ -315,7 +333,7 @@ class SceneProcessor:
             agent_scores_list=[kin_agents_scores.copy(), int_agents_scores].copy(),
             scene_score_list=[crowd_scene_score.copy(), kin_scene_score.copy(), int_scene_score.copy()]
         )
-        return  {
+        return {
             'agent_scores': {
                 'kinematic': kin_agents_scores,
                 'interactive': int_agents_scores,
@@ -334,3 +352,27 @@ class SceneProcessor:
                 'critical': crit_scene_score
             },
         }
+
+    def data_percentiles(self):
+
+        scores = np.array(self.data_summary.scores)
+        percentiles = [50, 60, 70, 80, 90, 95, 99, 99.5]
+        percentile_values = np.percentile(scores, percentiles)
+
+        scenes_data = self.data_summary.files_scores
+        data_summary = {"num_scenes": self.data_summary.num_scenes,
+                        "percentile_scores": {},
+                        }
+        for i, p in enumerate(percentiles):
+            threshold = percentile_values[i]
+            filtered = [{scene_file: score} for (score, scene_file) in scenes_data if score >= threshold]
+            data_summary["percentile_scores"][str(p)] = {
+                "threshold": float(threshold),
+                "num_scenes": len(filtered),
+                "scenes": filtered
+            }
+
+        summary_file = os.path.join(self.out_data_summary_dir, f"{self.airport}_summary.json")
+        with open(summary_file, 'w') as f:
+            json.dump(data_summary, f, indent=4)
+        print(f"Dataset summary saved to {summary_file}")
