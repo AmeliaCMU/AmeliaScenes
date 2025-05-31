@@ -7,6 +7,7 @@ import random
 import imageio
 import numpy as np
 
+from tqdm import tqdm
 from math import floor
 from pathlib import Path
 from easydict import EasyDict
@@ -16,13 +17,15 @@ from typing import Tuple, Dict
 from amelia_scenes.utils import common
 from datetime import datetime, timezone, timedelta
 
+
 def _get_file_timestamp(filepath: str) -> str:
     stem = Path(filepath).stem
     _, _, scene_ts = stem.split("_")
     unix_epoch = int(scene_ts)
     return unix_epoch
-    
-def _process_timestamp(scene_ts: int, frame_idx: int, airport_code: str, MAX_INTERVAL = 3600 ) -> dict:
+
+
+def _process_timestamp(scene_ts: int, frame_idx: int, airport_code: str, MAX_INTERVAL=3600) -> dict:
     """ Given a UNIX timestamp, it calculates current time given a frame index (seconds) and also returns the localtime"""
     use_localtime = True
     local_time = None
@@ -36,7 +39,8 @@ def _process_timestamp(scene_ts: int, frame_idx: int, airport_code: str, MAX_INT
     unix_epoch = int(time_at_frame.timestamp())
     # Sanity check
     if abs(unix_epoch - scene_ts) > MAX_INTERVAL:
-        print(f"Warning: Time difference between scene timestamp and frame index is too large ({abs(unix_epoch - int(scene_ts))} seconds).")
+        print(
+            f"Warning: Time difference between scene timestamp and frame index is too large ({abs(unix_epoch - int(scene_ts))} seconds).")
         raise ValueError("Time difference exceeds maximum interval.")
     # If possible, convert to local time
     if use_localtime:
@@ -47,9 +51,10 @@ def _process_timestamp(scene_ts: int, frame_idx: int, airport_code: str, MAX_INT
         "unix_epoch": unix_epoch,
         "utc_iso": base_time.isoformat(),
         "local_iso": local_time.isoformat() if use_localtime else None
-    }   
+    }
     return time_dict
-    
+
+
 def load_assets(input_dir: str, airport: str, graph_file: str = "graph_data_a10v01os") -> Tuple:
     # Graph
     graph_data_dir = os.path.join(input_dir, graph_file, airport)
@@ -319,3 +324,58 @@ def create_month_splits(data_prep: dict, airport: str):
     test_list = airport_files[test_idx].tolist()
     with open(f"{data_prep.out_data_dir}/test_splits/{filename}.txt", 'w') as fp:
         fp.write('\n'.join(test_list))
+
+
+def dataset_summary(base_path: str, traj_version: str, airport: str) -> Dict[str, int]:
+    """ Returns a summary of the dataset for the given airport. """
+    summary = {"num_scenes": 0, "percentile_scores": {
+        50: {}, 60: {}, 70: {}, 80: {}, 90: {}, 95: {}, 99: {}
+    }}
+    traj_data_dir = f"traj_data_{traj_version}"
+    scenes_dir = os.path.join(base_path, traj_data_dir, 'proc_full_scenes', airport)
+    scenes_subdirs = [
+        os.path.join(scenes_dir, sdir) for sdir in os.listdir(scenes_dir)
+        if os.path.isdir(os.path.join(scenes_dir, sdir))
+    ]
+    scene_files = []
+    for subdir in scenes_subdirs:
+        scene_files += [os.path.join(subdir, f) for f in natsorted(os.listdir(subdir)) if f.endswith('.pkl')]
+
+    scores_list = []
+    scenes_data = []
+
+    for scene_file in tqdm(scene_files):
+        with open(scene_file, 'rb') as f:
+            scene = pickle.load(f)
+        # Extract score from scene; adjust based on your scene structure
+        score = scene["meta"]["scene_scores"]["critical"]
+
+        if score is not None:
+            scene_file = os.path.join(
+                os.path.basename(os.path.dirname(scene_file)), os.path.basename(scene_file))
+            scores_list += [score]
+            scenes_data += [(score, scene_file)]
+        else:
+            print(f"Score not found in {scene_file}")
+
+    summary["num_scenes"] = len(scenes_data)
+    if scores_list:
+        percentiles = [50, 60, 70, 80, 90, 95, 99]
+        scores_array = np.array(scores_list)
+        for p in percentiles:
+            threshold = np.percentile(scores_array, p)
+            filtered = [{scene_file: score} for (score, scene_file) in scenes_data if score >= threshold]
+            summary["percentile_scores"][p] = {
+                "threshold": threshold,
+                "num_scenes": len(filtered),
+                "scenes": filtered
+            }
+
+    out_dir = os.path.join(base_path, traj_data_dir, 'proc_scenes_metas', airport)
+    os.makedirs(out_dir, exist_ok=True)
+    summary_file = os.path.join(out_dir, f"{airport}_summary.json")
+    with open(summary_file, 'w') as f:
+        json.dump(summary, f, indent=4)
+    print(f"Dataset summary saved to {summary_file}")
+
+    return summary
