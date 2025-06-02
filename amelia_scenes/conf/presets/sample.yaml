@@ -8,7 +8,7 @@ out_version: Null # Set to null to omit versioning for output
 
 # PROCESSING SETTINGS
 parallel: True
-overwrite: True
+overwrite: False
 benchmark: False
 xplane: False
 perc_process: .005
@@ -22,3 +22,7 @@ skip: 1
 min_agents: 2
 max_agents: 40
 min_valid_points: 2
+
+
+# GENERATE DATASET SUMMARY
+dataset_summary: True

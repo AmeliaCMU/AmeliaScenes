@@ -62,10 +62,10 @@ class SceneProcessor:
 
         self.n_jobs = config.jobs
 
-        self.data_summary = EasyDict({
-            'scores': [],
-            'num_scenes': 0,
-            'files_scores': []})
+        # self.data_summary = EasyDict({
+        #     'scores': [],
+        #     'num_scenes': 0,
+        #     'files_scores': []})
 
         limits_file = os.path.join(config.assets_dir, self.airport, 'limits.json')
         with open(limits_file, 'r') as fp:
@@ -123,7 +123,7 @@ class SceneProcessor:
             fp.write('\n'.join(self.blacklist))
 
         # get data percentiles
-        self.data_percentiles()
+        # self.data_percentiles()
 
     def process_file(self, f: str) -> Tuple[List, List, List, List, List, List]:
         """ Processes a single data file. It first obtains the number of possible sequences (given
@@ -353,26 +353,26 @@ class SceneProcessor:
             },
         }
 
-    def data_percentiles(self):
+    # def data_percentiles(self):
 
-        scores = np.array(self.data_summary.scores)
-        percentiles = [50, 60, 70, 80, 90, 95, 99, 99.5]
-        percentile_values = np.percentile(scores, percentiles)
+    #     scores = np.array(self.data_summary.scores)
+    #     percentiles = [50, 60, 70, 80, 90, 95, 99, 99.5]
+    #     percentile_values = np.percentile(scores, percentiles)
 
-        scenes_data = self.data_summary.files_scores
-        data_summary = {"num_scenes": self.data_summary.num_scenes,
-                        "percentile_scores": {},
-                        }
-        for i, p in enumerate(percentiles):
-            threshold = percentile_values[i]
-            filtered = [{scene_file: score} for (score, scene_file) in scenes_data if score >= threshold]
-            data_summary["percentile_scores"][str(p)] = {
-                "threshold": float(threshold),
-                "num_scenes": len(filtered),
-                "scenes": filtered
-            }
+    #     scenes_data = self.data_summary.files_scores
+    #     data_summary = {"num_scenes": self.data_summary.num_scenes,
+    #                     "percentile_scores": {},
+    #                     }
+    #     for i, p in enumerate(percentiles):
+    #         threshold = percentile_values[i]
+    #         filtered = [{scene_file: score} for (score, scene_file) in scenes_data if score >= threshold]
+    #         data_summary["percentile_scores"][str(p)] = {
+    #             "threshold": float(threshold),
+    #             "num_scenes": len(filtered),
+    #             "scenes": filtered
+    #         }
 
-        summary_file = os.path.join(self.out_data_summary_dir, f"{self.airport}_summary.json")
-        with open(summary_file, 'w') as f:
-            json.dump(data_summary, f, indent=4)
-        print(f"Dataset summary saved to {summary_file}")
+    #     summary_file = os.path.join(self.out_data_summary_dir, f"{self.airport}_summary.json")
+    #     with open(summary_file, 'w') as f:
+    #         json.dump(data_summary, f, indent=4)
+    #     print(f"Dataset summary saved to {summary_file}")

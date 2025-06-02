@@ -328,9 +328,7 @@ def create_month_splits(data_prep: dict, airport: str):
 
 def dataset_summary(base_path: str, traj_version: str, airport: str) -> Dict[str, int]:
     """ Returns a summary of the dataset for the given airport. """
-    summary = {"num_scenes": 0, "percentile_scores": {
-        50: {}, 60: {}, 70: {}, 80: {}, 90: {}, 95: {}, 99: {}
-    }}
+    summary = {"num_scenes": 0, "scenes": {}, "perc_values": {}}
     traj_data_dir = f"traj_data_{traj_version}"
     scenes_dir = os.path.join(base_path, traj_data_dir, 'proc_full_scenes', airport)
     scenes_subdirs = [
@@ -342,7 +340,7 @@ def dataset_summary(base_path: str, traj_version: str, airport: str) -> Dict[str
         scene_files += [os.path.join(subdir, f) for f in natsorted(os.listdir(subdir)) if f.endswith('.pkl')]
 
     scores_list = []
-    scenes_data = []
+    scenes_data = {}
 
     for scene_file in tqdm(scene_files):
         with open(scene_file, 'rb') as f:
@@ -354,24 +352,19 @@ def dataset_summary(base_path: str, traj_version: str, airport: str) -> Dict[str
             scene_file = os.path.join(
                 os.path.basename(os.path.dirname(scene_file)), os.path.basename(scene_file))
             scores_list += [score]
-            scenes_data += [(score, scene_file)]
+            scenes_data[scene_file] = score
         else:
             print(f"Score not found in {scene_file}")
 
     summary["num_scenes"] = len(scenes_data)
+    summary["scenes"] = scenes_data
     if scores_list:
-        percentiles = [50, 60, 70, 80, 90, 95, 99]
+        percentiles = [1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99]
         scores_array = np.array(scores_list)
-        for p in percentiles:
-            threshold = np.percentile(scores_array, p)
-            filtered = [{scene_file: score} for (score, scene_file) in scenes_data if score >= threshold]
-            summary["percentile_scores"][p] = {
-                "threshold": threshold,
-                "num_scenes": len(filtered),
-                "scenes": filtered
-            }
+        thresholds = np.percentile(scores_array, percentiles)
+        summary["perc_values"] = {p: t for p, t in zip(percentiles, thresholds)}
 
-    out_dir = os.path.join(base_path, traj_data_dir, 'proc_scenes_metas', airport)
+    out_dir = os.path.join(base_path, traj_data_dir, 'proc_scenes_summary', airport)
     os.makedirs(out_dir, exist_ok=True)
     summary_file = os.path.join(out_dir, f"{airport}_summary.json")
     with open(summary_file, 'w') as f:

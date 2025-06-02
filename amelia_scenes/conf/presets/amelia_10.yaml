@@ -33,3 +33,6 @@ skip: 1
 min_agents: 2
 max_agents: 40
 min_valid_points: 2
+
+# GENERATE DATASET SUMMARY
+dataset_summary: True

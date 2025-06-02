@@ -78,9 +78,9 @@ def run(cfg: DictConfig) -> None:
             print(f"Error processing {airport}: {e}")
             print(traceback.format_exc())
 
-        # if cfg_one.dataset_summary:
-        #     print(f"\033[93m[INFO]\033[0m Generating dataset summary for {airport}...")
-        #     D.dataset_summary(cfg.base_dir,  traj_version=cfg.traj_version, airport=airport)
+        if cfg_one.dataset_summary:
+            print(f"\033[93m[INFO]\033[0m Generating dataset summary for {airport}...")
+            D.dataset_summary(cfg.base_dir,  traj_version=cfg.traj_version, airport=airport)
 
 
 if __name__ == "__main__":
