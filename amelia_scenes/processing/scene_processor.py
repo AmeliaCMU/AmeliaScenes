@@ -101,7 +101,7 @@ class SceneProcessor:
         """
         print(f"Processing data for airport {self.airport.upper()}.")
         if self.parallel:
-            scenes = Parallel(n_jobs=self.n_jobs)(
+            scenes = Parallel(n_jobs=self.n_jobs, require="sharedmem")(
                 delayed(self.process_file)(f) for f in tqdm(self.data_files))
             # Unpacking results
             for i in range(len(scenes)):
@@ -196,6 +196,7 @@ class SceneProcessor:
                 # self.data_summary.num_scenes += 1
                 # self.data_summary.files_scores += [(score, os.path.join(
                 #     shard_name, f"{scenario_id}_n-{num_agents}.pkl"))]
+
 
             scene_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
             with open(scene_filepath, 'wb') as f:

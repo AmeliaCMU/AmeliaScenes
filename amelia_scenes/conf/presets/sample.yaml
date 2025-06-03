@@ -8,7 +8,7 @@ out_version: Null # Set to null to omit versioning for output
 
 # PROCESSING SETTINGS
 parallel: True
-overwrite: True
+overwrite: False
 benchmark: False
 xplane: False
 perc_process: 1.0
