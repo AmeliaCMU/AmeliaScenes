@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -p RM-shared
-#SBATCH -t 8:00:00
+#SBATCH -t 15:00:00
 #SBATCH --cpus-per-task=32
 #SBATCH -n 1
 #SBATCH -o /ocean/projects/cis240030p/canovill/Amelia/AmeliaScenes/logs/slurm_logs/%j.out
@@ -13,6 +13,6 @@ set -x
 
 conda activate amelia
 
-cd /ocean/projects/cis220039p/jaypat/AMELIA_NEURIPS/AmeliaSWIM
+cd /ocean/projects/cis240030p/canovill/amelia/AmeliaScenes
 
-srun python process_parrallel.py data=${data} airports=${airport}
+srun  python amelia_scenes/run_processor.py airport=${airport} traj_version=a42v01 graph_version=a42v01
