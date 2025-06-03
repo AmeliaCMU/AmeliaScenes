@@ -180,3 +180,7 @@ cython_debug/
 
 # temporary files
 tmp
+
+# PSC files
+*.out
+logs

@@ -11,7 +11,7 @@ parallel: True
 overwrite: False
 benchmark: False
 xplane: False
-perc_process: .005
+perc_process: 1.0
 seed: 42
 jobs: -1
 

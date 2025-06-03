@@ -191,11 +191,12 @@ class SceneProcessor:
             scene['meta'] = None
             if self.add_scores_meta:
                 scene['meta'] = self.process_scores(scene)
-                score = scene['meta']['scene_scores']['critical']
-                self.data_summary.scores += [score]
-                self.data_summary.num_scenes += 1
-                self.data_summary.files_scores += [(score, os.path.join(
-                    shard_name, f"{scenario_id}_n-{num_agents}.pkl"))]
+                # score = scene['meta']['scene_scores']['critical']
+                # self.data_summary.scores += [score]
+                # self.data_summary.num_scenes += 1
+                # self.data_summary.files_scores += [(score, os.path.join(
+                #     shard_name, f"{scenario_id}_n-{num_agents}.pkl"))]
+
 
             scene_filepath = os.path.join(data_dir, f"{scenario_id}_n-{num_agents}.pkl")
             with open(scene_filepath, 'wb') as f:
