@@ -20,7 +20,8 @@ from datetime import datetime, timezone, timedelta
 
 def _get_file_timestamp(filepath: str) -> str:
     stem = Path(filepath).stem
-    _, _, scene_ts = stem.split("_")
+    file_id = stem.split("_")
+    scene_ts = file_id[-1]
     unix_epoch = int(scene_ts)
     return unix_epoch
 

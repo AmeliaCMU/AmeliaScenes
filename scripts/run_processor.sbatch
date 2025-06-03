@@ -4,7 +4,8 @@
 #SBATCH -t 15:00:00
 #SBATCH --cpus-per-task=32
 #SBATCH -n 1
-#SBATCH -o /ocean/projects/cis240030p/canovill/Amelia/AmeliaScenes/logs/slurm_logs/%j.out
+#SBATCH -o /ocean/projects/cis240030p/canovill/amelia/AmeliaScenes/logs/slurm_logs/%j.out
+
 
 airport=$1
 

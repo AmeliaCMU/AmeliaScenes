@@ -8,10 +8,10 @@ out_version: Null # Set to null to omit versioning for output
 
 # PROCESSING SETTINGS
 parallel: True
-overwrite: False
+overwrite: True
 benchmark: False
 xplane: False
-perc_process: .005
+perc_process: 1.0
 seed: 42
 jobs: -1
 
