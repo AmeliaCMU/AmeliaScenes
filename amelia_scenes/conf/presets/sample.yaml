@@ -1,6 +1,6 @@
 # @package _global_
 # SETUP PATH NAMES
-airport: [ksfo] # ICAO code or use keyword all for all airports
+airport: [kmdw] # ICAO code or use keyword all for all airports
 base_dir: datasets/amelia
 traj_version: a10v08
 graph_version: a10v01os

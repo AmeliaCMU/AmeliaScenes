@@ -1,8 +1,10 @@
 import os
 import json
+import sys
 import math
 import pickle
 import random
+import signal
 import numpy as np
 import pandas as pd
 
@@ -10,6 +12,7 @@ import amelia_scenes.utils.common as C
 import amelia_scenes.utils.dataset as D
 import amelia_scenes.utils.global_masks as G
 
+import threading
 from tqdm import tqdm
 from easydict import EasyDict
 from typing import Tuple, List
@@ -42,10 +45,14 @@ class SceneProcessor:
         os.makedirs(self.blacklist_dir, exist_ok=True)
         self.out_data_summary_dir = os.path.join(config.out_summary_dir, self.airport)
         os.makedirs(self.out_data_summary_dir, exist_ok=True)
-
         self.parallel = config.parallel
         self.overwrite = config.overwrite
         self.add_scores_meta = config.add_scores_meta
+
+        self._got_shutdown_notice = False
+        signal.signal(signal.SIGUSR1, self._handle_shutdown_signal)
+        signal.signal(signal.SIGTERM, self._handle_shutdown_signal)
+        signal.signal(signal.SIGINT, self._handle_shutdown_signal)
 
         self.seed = config.seed
         self.extend = True
@@ -78,6 +85,12 @@ class SceneProcessor:
             graph_pickle = pickle.load(f)
             self.hold_lines = graph_pickle['hold_lines'][:, 2:4]
 
+        self.completed_files = []
+        progress_file = os.path.join(self.out_data_dir, f"{self.airport}_completed.txt")
+        if os.path.exists(progress_file) and not self.overwrite:
+            with open(progress_file, 'r') as f:
+                self.completed_files = f.read().splitlines()
+
         self.blacklist = []
         blacklist_file = os.path.join(self.blacklist_dir, f"{self.airport}.txt")
         if os.path.exists(blacklist_file) and not self.overwrite:
@@ -87,10 +100,28 @@ class SceneProcessor:
         file_list = os.listdir(self.in_data_dir)
         for duplicate in list(set(self.blacklist) & set(file_list)):
             file_list.remove(duplicate)
+
+        for duplicate in list(set(self.completed_files) & set(file_list)):
+            file_list.remove(duplicate)
+
         self.data_files = [os.path.join(self.in_data_dir, f) for f in file_list if f.endswith('.csv')]
         random.seed(self.seed)
         random.shuffle(self.data_files)
         self.data_files = self.data_files[:int(len(self.data_files) * config.perc_process)]
+
+    def _handle_shutdown_signal(self, signum, frame):
+        """
+        Signal handler for SIGUSR1 or SIGTERM. Writes out the current blacklist to disk
+        (under lock), then exits the process cleanly.
+        """
+        self._got_shutdown_notice = True
+        print("Received SIGTERM. Attempting to shutdown gracefully")
+
+        completed_file_path = os.path.join(self.out_data_dir, f"{self.airport}_completed.txt")
+        with open(completed_file_path, 'w') as f:
+            f.write('\n'.join(self.completed_files))
+
+        sys.exit(0)
 
     def process_data(self) -> None:
         """ Processes the CSV data files containing airport trajectory information, creating shards
@@ -101,7 +132,7 @@ class SceneProcessor:
         """
         print(f"Processing data for airport {self.airport.upper()}.")
         if self.parallel:
-            scenes = Parallel(n_jobs=self.n_jobs)(
+            scenes = Parallel(n_jobs=self.n_jobs, require="sharedmem")(
                 delayed(self.process_file)(f) for f in tqdm(self.data_files))
             # Unpacking results
             for i in range(len(scenes)):
@@ -122,8 +153,9 @@ class SceneProcessor:
         with open(blacklist_file, 'w') as fp:
             fp.write('\n'.join(self.blacklist))
 
-        # get data percentiles
-        # self.data_percentiles()
+        completed_file_path = os.path.join(self.out_data_dir, f"{self.airport}_completed.txt")
+        with open(completed_file_path, 'w') as f:
+            f.write('\n'.join(self.completed_files))
 
     def process_file(self, f: str) -> Tuple[List, List, List, List, List, List]:
         """ Processes a single data file. It first obtains the number of possible sequences (given
@@ -141,7 +173,9 @@ class SceneProcessor:
         file_time = D._get_file_timestamp(base_name)
         data_dir = os.path.join(self.out_data_dir, shard_name)
         # Check if the file has been sharded already. If so, add sharded files to the scenario list.
-        if not self.overwrite and (os.path.exists(data_dir) and len(os.listdir(data_dir)) > 0):
+        file_path = f.removeprefix(self.in_data_dir+'/')
+        if not self.overwrite and file_path in self.completed_files:
+            print(f"File {f} already processed. Skipping.")
             return None
 
         # Otherwise, shard the file and add it to the scenario list.
@@ -157,7 +191,9 @@ class SceneProcessor:
         blacklist = []
         num_sequences = int(math.ceil((len(frames) - (self.seq_len) + 1) / self.skip))
         if num_sequences < 1:
+            print("Adding to blacklist!!")
             blacklist.append(f.removeprefix(self.in_data_dir+'/'))
+            self.completed_files.append(f.removeprefix(self.in_data_dir+'/'))
             return blacklist
 
         sharded_files = []
@@ -208,6 +244,9 @@ class SceneProcessor:
         if len(os.listdir(data_dir)) == 0:
             blacklist.append(f.removeprefix(self.in_data_dir+'/'))
             os.rmdir(data_dir)
+
+        self.completed_files.append(f.removeprefix(self.in_data_dir+'/'))
+
         return blacklist
 
     def process_seq(
