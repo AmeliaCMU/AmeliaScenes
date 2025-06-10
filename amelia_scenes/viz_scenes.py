@@ -29,7 +29,7 @@ def run(
 ):
     assets = load_assets(base_path, airport, graph_file=f'graph_data_{graph_version}')
     tag = 'benchmark' if benchmark else 'xplane' if xplane else traj_version
-    traj_data_dir = f"traj_data_{tag}" 
+    traj_data_dir = f"traj_data_{tag}"
 
     scenes_dir = os.path.join(base_path, traj_data_dir, 'proc_full_scenes', airport)
     scenes_subdirs = [
@@ -77,11 +77,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--traj_version",
         type=str,
-        default="a10v08")
+        default="a42v01")
     parser.add_argument(
         "--graph_version",
         type=str,
-        default="a10v01os")
+        default="a42v01")
     parser.add_argument(
         "--out_path",
         type=str,
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         "--benchmark",
         action='store_true')
     parser.add_argument(
-        "--xplane", 
+        "--xplane",
         action='store_true')
     parser.add_argument(
         "--scene_type",
