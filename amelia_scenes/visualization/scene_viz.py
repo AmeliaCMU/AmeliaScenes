@@ -21,6 +21,7 @@ SUPPORTED_SCENES_TYPES = [
     'strategy'
 ]
 
+
 def plot_scene(
     scene: dict,
     assets: Tuple,
@@ -55,7 +56,7 @@ def plot_scene(
         bench.plot_scene_benchmark(scene, assets, benchmark, filename, dpi, reproject=reproject)
     elif scene_type == 'benchmark_pred':
         predictions = kwargs.get('predictions')
-        assert predictions, "Predictions not provided" 
+        assert predictions, "Predictions not provided"
         benchmark = scene['benchmark']
         # benchmark = None
         bench.plot_scene_benchmark_predictions(
@@ -75,9 +76,10 @@ def plot_scene(
     elif scene_type == 'scores':
         scores = kwargs.get('scores', {})
         assert scores, "Scores not provided for scene visualization"
+        show_scores = kwargs.get('show_scores', False)
         # if scores else None
         scoring.plot_scene_scores(
-            scene, assets, filename, scores=scores, reproject=reproject, dpi=dpi)
+            scene, assets, filename, scores=scores, show_scores=show_scores, reproject=reproject, dpi=dpi)
     else:
         raise NotImplementedError
     # elif scene_type == 'strategy':
@@ -103,13 +105,13 @@ def plot_scene_simple(
         north, east, south, west = C.transform_extent(limits, C.MAP_CRS, projection)
 
     fig, ax = plt.subplots()
-    
+
     # Plots airport map as background
     ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3)
     # Plots all agent sequences
     C.plot_sequences(
-        ax, scene, agents, 
-        agents_interest=agents_interest, 
-        reproject=reproject, 
+        ax, scene, agents,
+        agents_interest=agents_interest,
+        reproject=reproject,
         projection=projection)
-    C.save(ax, filename, dpi)#, limits=[west, east, south, north])
+    C.save(ax, filename, dpi)  # , limits=[west, east, south, north])

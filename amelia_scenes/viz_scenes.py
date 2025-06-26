@@ -24,6 +24,7 @@ def run(
     benchmark: bool,
     xplane: bool,
     scene_type: str,
+    show_scores: bool,
     seed: int,
     dpi: int
 ):
@@ -59,12 +60,12 @@ def run(
         scores = {}
         scores['agent_scores'] = scene["meta"]['agent_scores']['critical']
         scores['scene_scores'] = scene["meta"]['scene_scores']['critical']
-        scores['agent_valid'] = scene['agent_valid']
+        scores['valid_agents'] = scene['agent_valid']
 
         fsplit = scene_file.split('/')
         scenario_name, scenario_id = fsplit[-2], fsplit[-1].split('.')[0]
         filetag = os.path.join(out_dir, f"{scenario_name}_{scenario_id}.png")
-        viz.plot_scene(scene, assets, filetag, scene_type, dpi=dpi, scores=scores)
+        viz.plot_scene(scene, assets, filetag, scene_type, dpi=dpi, scores=scores, show_scores=show_scores)
 
 
 if __name__ == "__main__":
@@ -113,6 +114,12 @@ if __name__ == "__main__":
         "--scene_type",
         default='simple',
         choices=SUPPORTED_SCENES_TYPES)
+    parser.add_argument(
+        "--show-scores",
+        action='store_true',
+        help="Show scores in the scene visualization, if the scene type is equal to 'scores'.",
+        default=False
+    )
     parser.add_argument(
         "--seed",
         type=int,

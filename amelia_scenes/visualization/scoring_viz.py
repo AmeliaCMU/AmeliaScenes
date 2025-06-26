@@ -84,7 +84,7 @@ def plot_scene_strategy(
 
 
 def plot_scene_scores(
-    scene: dict, assets: Tuple, filename: str, scores: dict = {}, dpi=600,
+    scene: dict, assets: Tuple, filename: str, scores: dict = {}, show_scores: bool = False, dpi=600,
     reproject: bool = False, projection: str = 'EPSG:3857'
 ) -> None:
     bkg, hold_lines, graph_nx, limits, agents = assets
@@ -105,7 +105,7 @@ def plot_scene_scores(
 
     C.plot_sequences_cm(
         ax, scene, agents, reproject=reproject, projection=projection, valid_agents=valid_agents,
-        Z=agent_scores)
+        Z=agent_scores, show_scores=show_scores)
     C.save(ax, filename, dpi)
 
 
