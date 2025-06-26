@@ -29,7 +29,7 @@ def run(
 ):
     assets = load_assets(base_path, airport, graph_file=f'graph_data_{graph_version}')
     tag = 'benchmark' if benchmark else 'xplane' if xplane else traj_version
-    traj_data_dir = f"traj_data_{tag}" 
+    traj_data_dir = f"traj_data_{tag}"
 
     scenes_dir = os.path.join(base_path, traj_data_dir, 'proc_full_scenes', airport)
     scenes_subdirs = [
@@ -58,7 +58,7 @@ def run(
         fsplit = scene_file.split('/')
         scenario_name, scenario_id = fsplit[-2], fsplit[-1].split('.')[0]
         filetag = os.path.join(out_dir, f"{scenario_name}_{scenario_id}.png")
-        viz.plot_scene(scene, assets, filetag, scene_type, dpi=dpi)
+        viz.plot_scene(scene, assets, filetag, scene_type, dpi=dpi, scores=scores)
 
 
 if __name__ == "__main__":
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         "--benchmark",
         action='store_true')
     parser.add_argument(
-        "--xplane", 
+        "--xplane",
         action='store_true')
     parser.add_argument(
         "--scene_type",
