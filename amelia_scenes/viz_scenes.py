@@ -55,7 +55,11 @@ def run(
         with open(scene_file, 'rb') as f:
             scene = pickle.load(f)
 
-        scores = scene["meta"]["scene_scores"]["critical"]
+        # NOTE: wrap for plotting scores
+        scores = {}
+        scores['agent_scores'] = scene["meta"]['agent_scores']['critical']
+        scores['scene_scores'] = scene["meta"]['scene_scores']['critical']
+        scores['agent_valid'] = scene['agent_valid']
 
         fsplit = scene_file.split('/')
         scenario_name, scenario_id = fsplit[-2], fsplit[-1].split('.')[0]
