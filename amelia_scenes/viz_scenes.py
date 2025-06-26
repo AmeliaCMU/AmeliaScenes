@@ -58,7 +58,7 @@ def run(
         fsplit = scene_file.split('/')
         scenario_name, scenario_id = fsplit[-2], fsplit[-1].split('.')[0]
         filetag = os.path.join(out_dir, f"{scenario_name}_{scenario_id}.png")
-        viz.plot_scene(scene, assets, filetag, scene_type, dpi=dpi)
+        viz.plot_scene(scene, assets, filetag, scene_type, dpi=dpi, scores=scores)
 
 
 if __name__ == "__main__":
