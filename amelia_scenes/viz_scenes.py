@@ -55,6 +55,8 @@ def run(
         with open(scene_file, 'rb') as f:
             scene = pickle.load(f)
 
+        scores = scene["meta"]["scene_scores"]["critical"]
+
         fsplit = scene_file.split('/')
         scenario_name, scenario_id = fsplit[-2], fsplit[-1].split('.')[0]
         filetag = os.path.join(out_dir, f"{scenario_name}_{scenario_id}.png")
