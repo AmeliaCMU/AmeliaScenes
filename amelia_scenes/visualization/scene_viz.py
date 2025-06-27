@@ -148,31 +148,31 @@ def plot_scene_gif(
 
     # Plots all agent sequences
     for t in range(seq_len):
-        start_time = time()
+        # start_time = time()
 
         fig, ax = plt.subplots()
         ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3)
 
-        bkg_time = time() - start_time
-        print(f"Time to plot background: {bkg_time:.4f} seconds")
+        # bkg_time = time() - start_time
+        # print(f"Time to plot background: {bkg_time:.4f} seconds")
         # Plots airport map as background
         scene_t = zip(agent_sequences[:, t, :], agent_types, agent_masks[:, t], agent_ids, agent_valid)
-        plot_time = time()
+        # plot_time = time()
         C.plot_timestep(
             ax, scene_t, agents,
             agents_interest=agents_interest,
             reproject=reproject,
             projection=projection)
-        plot_time = time() - plot_time
-        print(f"Time to plot timestep {t}: {plot_time:.4f} seconds")
-        save_time = time()
+        # plot_time = time() - plot_time
+        # print(f"Time to plot timestep {t}: {plot_time:.4f} seconds")
+        # save_time = time()
         # Use Agg backend for faster, non-interactive rendering
         C.save(ax, filename=os.path.join(out_dir, f"{tag_name}_{t:04d}.png"), dpi=dpi)
 
-        save_time = time() - save_time
-        print(f"Time to save frame {t}: {save_time:.4f} seconds")
-        total_time = time() - start_time
-        print(f"Total time to plot frame: {total_time: .4f} seconds")
+        # save_time = time() - save_time
+        # print(f"Time to save frame {t}: {save_time:.4f} seconds")
+        # total_time = time() - start_time
+        # print(f"Total time to plot frame: {total_time: .4f} seconds")
         plt.close(fig)
 
     C.to_gif(out_dir, tag_name)
