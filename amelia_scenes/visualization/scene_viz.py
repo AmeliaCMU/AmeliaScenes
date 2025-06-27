@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
-
 from typing import Tuple
+import os
+from time import time
 
 from amelia_scenes.visualization import common as C
 from amelia_scenes.visualization import benchmark_viz as bench
@@ -18,7 +19,8 @@ SUPPORTED_SCENES_TYPES = [
     'joint_pred',
     'features',
     'scores',
-    'strategy'
+    'strategy',
+    'gif'
 ]
 
 
@@ -80,6 +82,10 @@ def plot_scene(
         # if scores else None
         scoring.plot_scene_scores(
             scene, assets, filename, scores=scores, show_scores=show_scores, reproject=reproject, dpi=dpi)
+    elif scene_type == 'gif':
+        # Implement GIF visualization
+        agents = [] if kwargs.get('agents_interest') is None else kwargs.get('agents_interest')
+        plot_scene_gif(scene, assets, filename, dpi, reproject=reproject, agents_interest=agents)
     else:
         raise NotImplementedError
     # elif scene_type == 'strategy':
@@ -115,3 +121,58 @@ def plot_scene_simple(
         reproject=reproject,
         projection=projection)
     C.save(ax, filename, dpi)  # , limits=[west, east, south, north])
+
+
+def plot_scene_gif(
+    scene: dict, assets: Tuple, filename: str = 'temp.png', dpi=600, agents_interest: list = [],
+    reproject: bool = False, projection: str = 'EPSG:3857'
+) -> None:
+    """ Visualize simple scenes """
+    bkg, hold_lines, graph_nx, limits, agents = assets
+    limits, ref_data = limits
+    north, east, south, west, z_min, z_max = limits
+    if reproject:
+        north, east, south, west = C.transform_extent(limits, C.MAP_CRS, projection)
+
+    # create directory for saving frames
+
+    scene_name = os.path.splitext(os.path.basename(filename))[0]
+    tag_name = '_'.join(scene_name.split('_')[-2:])
+    out_dir = os.path.join(os.path.dirname(filename), '_'.join(scene_name.split('_')[:-2]))
+    os.makedirs(out_dir, exist_ok=True)
+
+    agent_sequences, agent_masks = scene['agent_sequences'][:, :, G.HLL], scene['agent_masks']
+    agent_types, agent_ids, agent_valid = scene['agent_types'], scene['agent_ids'], scene['agent_valid']
+
+    num_agents, seq_len, _ = agent_sequences.shape
+
+    # Plots all agent sequences
+    for t in range(seq_len):
+        start_time = time()
+
+        fig, ax = plt.subplots()
+        ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3)
+
+        bkg_time = time() - start_time
+        print(f"Time to plot background: {bkg_time:.4f} seconds")
+        # Plots airport map as background
+        scene_t = zip(agent_sequences[:, t, :], agent_types, agent_masks[:, t], agent_ids, agent_valid)
+        plot_time = time()
+        C.plot_timestep(
+            ax, scene_t, agents,
+            agents_interest=agents_interest,
+            reproject=reproject,
+            projection=projection)
+        plot_time = time() - plot_time
+        print(f"Time to plot timestep {t}: {plot_time:.4f} seconds")
+        save_time = time()
+        # Use Agg backend for faster, non-interactive rendering
+        C.save(ax, filename=os.path.join(out_dir, f"{tag_name}_{t:04d}.png"), dpi=dpi)
+
+        save_time = time() - save_time
+        print(f"Time to save frame {t}: {save_time:.4f} seconds")
+        total_time = time() - start_time
+        print(f"Total time to plot frame: {total_time: .4f} seconds")
+        plt.close(fig)
+
+    C.to_gif(out_dir, tag_name)
