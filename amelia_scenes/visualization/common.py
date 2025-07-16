@@ -402,14 +402,17 @@ def plot_sequences_cm(
         if lon == 0 or lat == 0:
             continue
 
-        agent_type, alpha = int(agent_type), 1.0
-        alpha = 1.0 if valid else 0.3
-        if n not in valid_agents:
+        agent_type = int(agent_type)
+        if not valid:
             traj_color = 'black'
             alpha = 0.3
         else:
             traj_color = cm.autumn(1.0-Z[zn])
             zn += 1
+            alpha = 1.0
+
+        # alpha = .3
+        # traj_color = 'black'
 
         # Place plane on last point of ground truth sequence
         icon = agents[agent_type]
