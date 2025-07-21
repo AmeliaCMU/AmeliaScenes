@@ -21,12 +21,15 @@ def run(
     out_path: str,
     num_scenes: int,
     perc: float,
+    viz_scene: str,
+    scene_id: str,
     benchmark: bool,
     xplane: bool,
     scene_type: str,
     show_scores: bool,
     seed: int,
     dpi: int
+
 ):
     assets = load_assets(base_path, airport, graph_file=f'graph_data_{graph_version}')
     tag = 'benchmark' if benchmark else 'xplane' if xplane else traj_version
@@ -44,7 +47,16 @@ def run(
     if not benchmark:
         random.seed(seed)
         random.shuffle(scene_files)
-        if num_scenes > 0:
+        if viz_scene:
+            # check if scene id is provided
+            file_name = viz_scene
+            if scene_id:
+                file_name = os.path.join(viz_scene, f"{scene_id}")
+
+            scene_files = [scene_file for scene_file in scene_files if file_name in scene_file]
+            if not scene_files:
+                raise FileNotFoundError(f"Scene {viz_scene}{scene_id} not found in {airport} scenes.")
+        elif num_scenes > 0:
             scene_files = scene_files[:num_scenes]
         else:
             scene_files = scene_files[:int(len(scene_files) * perc)]
@@ -110,6 +122,18 @@ if __name__ == "__main__":
         type=float,
         default=1.0,
         help="Percentage of files to load (0.0, 1]. Alternative, use --num_scenes.")
+    parser.add_argument(
+        "--viz_scene",
+        type=str,
+        default="",
+        help="Path to a scene file to visualize. If provided, other arguments are ignored."
+        " If not provided, the percentage of scenes to be visualized.")
+    parser.add_argument(
+        "--scene_id",
+        type=str,
+        default="",
+        help="ID of the scene to visualize. If provided, viz_scene must be provided."
+    )
     parser.add_argument(
         "--benchmark",
         action='store_true')
