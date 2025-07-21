@@ -55,7 +55,7 @@ def run(
 
             scene_files = [scene_file for scene_file in scene_files if file_name in scene_file]
             if not scene_files:
-                raise FileNotFoundError(f"Scene {viz_scene}{scene_id} not found in {airport} scenes.")
+                raise FileNotFoundError(f"Scene {viz_scene}_{scene_id} not found in {airport} scenes.")
         elif num_scenes > 0:
             scene_files = scene_files[:num_scenes]
         else:
