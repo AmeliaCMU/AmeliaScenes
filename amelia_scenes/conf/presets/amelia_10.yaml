@@ -18,8 +18,8 @@ graph_version: a10v01os
 out_version: null # Set to null to omit versioning for output
 
 # PROCESSING SETTINGS
-parallel: False
-overwrite: True
+parallel: True
+overwrite: False
 benchmark: False
 xplane: False
 perc_process: 1.0
