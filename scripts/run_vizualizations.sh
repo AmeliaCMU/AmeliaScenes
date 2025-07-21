@@ -5,7 +5,7 @@ conda activate amelia
 cd amelia/AmeliaScenes
 
 airports=(
-    "kbos KBOS_0_203_1728079864 001362_n_29"
+    "kbos KBOS_0_203_1728079864 001362_n-29"
     "kdca KDCA_0_12_1686573191 001224_n-18"
     "kjfk KJFK_0_48_1734145992 000278_n-36"
     "klax KLAX_0_109_1725777763 001074_n-37"
