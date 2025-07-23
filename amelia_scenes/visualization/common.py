@@ -391,6 +391,8 @@ def plot_sequences_cm(
     zipped = zip(agent_sequences, agent_types, agent_masks, agent_ids, agent_valid)
     zn = 0
     for n, (trajectory, agent_type, mask, agent_id, valid) in enumerate(zipped):
+        if not valid:
+            continue
         traj = trajectory[mask]
         if traj.shape[0] == 0:
             continue
@@ -402,12 +404,12 @@ def plot_sequences_cm(
         if lon == 0 or lat == 0:
             continue
 
-        agent_type, alpha = int(agent_type), 1.0
-        alpha = 1.0 if valid else 0.3
-        if n not in valid_agents:
+        agent_type = int(agent_type)
+        if not valid:
             traj_color = 'black'
-            alpha = 0.3
+            alpha = 0.1
         else:
+            alpha = .3
             traj_color = cm.autumn(1.0-Z[zn])
             zn += 1
 
@@ -417,6 +419,6 @@ def plot_sequences_cm(
         ab = AnnotationBbox(img, (lon, lat), frameon=False)
         ax.add_artist(ab)
 
-        ax.scatter(traj_ll[:, 1], traj_ll[:, 0], color=traj_color, s=0.5, alpha=alpha)
+        ax.scatter(traj_ll[:, 1], traj_ll[:, 0], color=traj_color, s=0.2, alpha=alpha)
         if show_scores:
             ax.text(lon, lat, s=round(Z[n], 2), color='black', fontsize='xx-small')
