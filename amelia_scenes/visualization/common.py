@@ -13,6 +13,7 @@ from scipy import ndimage
 from typing import Tuple
 
 from amelia_scenes.utils import global_masks as G
+import matplotlib
 
 
 # -------------------------------------------------------------------------------------------------#
@@ -105,6 +106,8 @@ def norm(arr, method: str = 'minmax'):
 
 
 def plot_agent(asset, heading, zoom=0.015, alpha=1.0):
+    # Use reshape=False to avoid deformation and preserve the original shape
+    # img = ndimage.rotate(asset, heading, reshape=False, order=3, mode='nearest')
     img = ndimage.rotate(asset, heading)
     img = np.fliplr(img)
     img = OffsetImage(img, zoom=zoom, alpha=alpha)
@@ -200,10 +203,17 @@ def save(
         xmin, xmax, ymin, ymax = limits
         ax.axis([xmin - OFFSET, xmax + OFFSET, ymin - OFFSET, ymax + OFFSET])
 
-    # Set figure bbox around the predicted trajectory
-    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-    plt.savefig(filename, dpi=dpi, bbox_inches='tight', pad_inches=0)
-    plt.close()
+    # Use Agg backend for faster rendering if not already set
+    if matplotlib.get_backend().lower() != "agg":
+        matplotlib.use("Agg", force=True)
+
+    # Remove layout adjustment for speed (optional)
+    # plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+
+    # Save figure directly from the axis' figure for efficiency
+    fig = ax.get_figure()
+    fig.savefig(filename, dpi=dpi, bbox_inches='tight', pad_inches=0)
+    plt.close(fig)
 
 
 def plot_sequences(
@@ -218,7 +228,7 @@ def plot_sequences(
     if agents_interest and not halo_values:
         halo_values = [MOTION_COLORS['interest_agent']] * len(agents_interest)
     agents_plot = {agent_id: 1.0-halo_value for agent_id, halo_value in zip(agents_interest, halo_values)}
-    
+
     # Display each trajectory
     traj_color, traj_lw = MOTION_COLORS['gt_hist'][0], MOTION_COLORS['gt_hist'][1]
     zipped = zip(agent_sequences, agent_types, agent_masks, agent_ids, agent_valid)
@@ -233,12 +243,12 @@ def plot_sequences(
         lon, lat = traj_ll[-1, 1], traj_ll[-1, 0]
         if lon == 0 or lat == 0:
             continue
-        
+
         # TODO: Need to check for all agent types **sigh**
         agent_type, alpha = int(agent_type), 1.0
-        alpha = 1.0 if valid else 0.3 
+        alpha = 1.0 if valid else 0.3
         traj_ls = 'solid' if valid and mask.sum() == seq_len else 'dotted'
-        
+
         # Place plane on last point of ground truth sequence
         icon = agents[agent_type]
         img = plot_agent(icon, heading, zoom=ZOOM[agent_type], alpha=alpha)
@@ -250,6 +260,48 @@ def plot_sequences(
 
         ax.plot(traj_ll[:, 1], traj_ll[:, 0], color=traj_color, lw=traj_lw, ls=traj_ls, alpha=alpha)
         # ax.text(traj_ll[0, 1], traj_ll[0, 0], f"{agent_id}")
+
+
+def plot_timestep(
+    ax, scene_t: zip, agents: dict,  agents_interest: list = [], halo_values: list = [],
+    reproject: bool = False, projection: str = 'EPSG:3857'
+) -> None:
+    # agent_sequences, agent_masks = scene['agent_sequences'][:, :, G.HLL], scene['agent_masks']
+    # agent_types, agent_ids, agent_valid = scene['agent_types'], scene['agent_ids'], scene['agent_valid']
+
+    # num_agents, seq_len, _ = agent_sequences.shape
+    # # halo values check
+    if agents_interest and not halo_values:
+        halo_values = [MOTION_COLORS['interest_agent']] * len(agents_interest)
+    agents_plot = {agent_id: 1.0-halo_value for agent_id, halo_value in zip(agents_interest, halo_values)}
+
+    # Display each agent in the timestep
+    # for t in range(seq_len):
+    # zipped = zip(agent_sequences[:, t, :], agent_types, agent_masks[:, t], agent_ids, agent_valid)
+    for n, (trajectory, agent_type, mask, agent_id, valid) in enumerate(scene_t):
+        traj = trajectory[mask]
+        if traj.shape[0] == 0:
+            continue
+
+        # Get heading at last point of trajectory history.
+        heading = traj[0, 0]
+        traj_ll = reproject_sequences(traj[:, 1:], projection) if reproject else traj[:, 1:]
+        lon, lat = traj_ll[0, 1], traj_ll[0, 0]
+        if lon == 0 or lat == 0:
+            continue
+
+        agent_type, alpha = int(agent_type), 1.0
+        alpha = 1.0 if valid else 0.3
+        # traj_ls = 'solid' if valid and mask.sum() == seq_len else 'dotted'
+
+        icon = agents[agent_type]
+        img = plot_agent(icon, heading, zoom=ZOOM[agent_type], alpha=alpha)
+        if agent_id in agents_interest:
+            alpha = agents_plot[agent_id]
+            ax.scatter(lon, lat, color='#FF5A4C', alpha=alpha, s=160)
+        ab = AnnotationBbox(img, (lon, lat), frameon=False)
+        ax.add_artist(ab)
+
 
 def plot_sequences_segmented(
     ax, scene: dict, agents: dict, agents_interest: list = [], halo_values: list = [],
@@ -265,8 +317,8 @@ def plot_sequences_segmented(
 
     # halo values check
     # if agents_interest.size and not halo_values.size:
-        # halo_values = [MOTION_COLORS['interest_agent']] * len(agents_interest)
-    # agents_plot = {agent_id: halo_value for agent_id, halo_value in zip(agents_interest, halo_values)}
+    #   halo_values = [MOTION_COLORS['interest_agent']] * len(agents_interest)
+    #   agents_plot = {agent_id: halo_value for agent_id, halo_value in zip(agents_interest, halo_values)}
 
     gt_hists, gt_futs = agent_sequences[:, :hist_len], agent_sequences[:, hist_len:]
     zipped = zip(gt_hists, gt_futs, agent_types, agent_masks, agent_ids)
@@ -299,8 +351,8 @@ def plot_sequences_segmented(
             if agent_id in agents_interest:
                 # color = cm.autumn(halo_value) # '#F29C3A'
                 color = '#F29C3A'
-                ax.scatter(lon, lat, color=color, alpha=MOTION_COLORS['ego_agent'][1], s = 160)        
-            ab = AnnotationBbox(img, (lon, lat), frameon = False) 
+                ax.scatter(lon, lat, color=color, alpha=MOTION_COLORS['ego_agent'][1], s=160)
+            ab = AnnotationBbox(img, (lon, lat), frameon=False)
             # ax.text(lon, lat, scene['agent_ids'][n], fontsize=10)
             ax.add_artist(ab)
 
@@ -324,24 +376,26 @@ def to_gif(base_dir, scene_tag):
         if not "coll" in f:
             os.remove(f)
 
+
 def plot_sequences_cm(
-    ax, scene: dict, agents: dict, reproject: bool = False, projection: str = 'EPSG:3857', 
-    valid_agents: list = [], Z: np.array = None, 
+    ax, scene: dict, agents: dict, reproject: bool = False, projection: str = 'EPSG:3857',
+    valid_agents: list = [], Z: np.array = None, show_scores: bool = False
 ) -> None:
     agent_sequences, agent_masks = scene['agent_sequences'][:, :, G.HLL], scene['agent_masks']
     agent_types, agent_ids, agent_valid = scene['agent_types'], scene['agent_ids'], scene['agent_valid']
 
     num_agents, seq_len, _ = agent_sequences.shape
-   
+
     # Display each trajectory
     traj_lw = MOTION_COLORS['gt_hist'][1]
     zipped = zip(agent_sequences, agent_types, agent_masks, agent_ids, agent_valid)
     zn = 0
     for n, (trajectory, agent_type, mask, agent_id, valid) in enumerate(zipped):
+        if not valid:
+            continue
         traj = trajectory[mask]
         if traj.shape[0] == 0:
             continue
-        
 
         # Get heading at last point of trajectory history.
         heading = traj[-1, 0]
@@ -349,13 +403,13 @@ def plot_sequences_cm(
         lon, lat = traj_ll[-1, 1], traj_ll[-1, 0]
         if lon == 0 or lat == 0:
             continue
-        
-        agent_type, alpha = int(agent_type), 1.0
-        alpha = 1.0 if valid else 0.3 
-        if n not in valid_agents:
+
+        agent_type = int(agent_type)
+        if not valid:
             traj_color = 'black'
-            alpha = 0.3
+            alpha = 0.1
         else:
+            alpha = .3
             traj_color = cm.autumn(1.0-Z[zn])
             zn += 1
 
@@ -365,4 +419,6 @@ def plot_sequences_cm(
         ab = AnnotationBbox(img, (lon, lat), frameon=False)
         ax.add_artist(ab)
 
-        ax.scatter(traj_ll[:, 1], traj_ll[:, 0], color=traj_color, s=0.8, alpha=alpha)
+        ax.scatter(traj_ll[:, 1], traj_ll[:, 0], color=traj_color, s=0.2, alpha=alpha)
+        if show_scores:
+            ax.text(lon, lat, s=round(Z[n], 2), color='black', fontsize='xx-small')
