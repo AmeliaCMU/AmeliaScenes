@@ -23,5 +23,5 @@ for airport in "${airports[@]}"; do
     scene=$(echo $airport | cut -d' ' -f2)
     scene_id=$(echo $airport | cut -d' ' -f3)
     echo "Processing airport: $airport_name, scene: $scene, scene_id: $scene_id"
-    python amelia_scenes/viz_scenes.py --traj_version a42v99percentile --graph_version a42v01os --perc 1.0 --scene_type gif  --dpi 800 --airport ${airport_name} --show-scores --viz_scene ${scene} --scene_id ${scene_id}
+    python amelia_scenes/viz_scenes.py --traj_version a42v99percentile --graph_version a42v01os --perc 1.0 --scene_type gif  --dpi 3000 --airport ${airport_name} --show-scores --viz_scene ${scene} --scene_id ${scene_id}
 done
