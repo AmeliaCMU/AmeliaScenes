@@ -50,9 +50,11 @@ def plot_scene(
     assert scene_type in SUPPORTED_SCENES_TYPES, f"Scene type not supported {scene_type}"
 
     reproject = True if scene['airport_id'] in ['panc', 'kmsy'] else False
+    to_scale = kwargs.get('to_scale', False)
     if scene_type == 'simple':
         agents = [] if kwargs.get('agents_interest') is None else kwargs.get('agents_interest')
-        plot_scene_simple(scene, assets, filename, dpi, reproject=reproject, agents_interest=agents)
+        plot_scene_simple(scene, assets, filename, dpi, reproject=reproject, agents_interest=agents,
+                          to_scale=to_scale)
     elif scene_type == 'benchmark':
         benchmark = scene['benchmark']
         bench.plot_scene_benchmark(scene, assets, benchmark, filename, dpi, reproject=reproject)
@@ -81,11 +83,12 @@ def plot_scene(
         show_scores = kwargs.get('show_scores', False)
         # if scores else None
         scoring.plot_scene_scores(
-            scene, assets, filename, scores=scores, show_scores=show_scores, reproject=reproject, dpi=dpi)
+            scene, assets, filename, scores=scores, show_scores=show_scores, reproject=reproject, dpi=dpi, to_scale=to_scale)
     elif scene_type == 'gif':
         # Implement GIF visualization
         agents = [] if kwargs.get('agents_interest') is None else kwargs.get('agents_interest')
-        plot_scene_gif(scene, assets, filename, dpi, reproject=reproject, agents_interest=agents)
+        plot_scene_gif(scene, assets, filename, dpi, reproject=reproject,
+                       agents_interest=agents, to_scale=to_scale)
     else:
         raise NotImplementedError
     # elif scene_type == 'strategy':
@@ -101,7 +104,7 @@ def plot_scene(
 
 def plot_scene_simple(
     scene: dict, assets: Tuple, filename: str = 'temp.png', dpi=600, agents_interest: list = [],
-    reproject: bool = False, projection: str = 'EPSG:3857'
+    reproject: bool = False, projection: str = 'EPSG:3857', to_scale: bool = False
 ) -> None:
     """ Visualize simple scenes """
     bkg, hold_lines, graph_nx, limits, agents = assets
@@ -109,6 +112,9 @@ def plot_scene_simple(
     north, east, south, west, z_min, z_max = limits
     if reproject:
         north, east, south, west = C.transform_extent(limits, C.MAP_CRS, projection)
+
+    if to_scale:
+        C.agents_to_scale(agents, limits)
 
     fig, ax = plt.subplots()
 
@@ -125,7 +131,7 @@ def plot_scene_simple(
 
 def plot_scene_gif(
     scene: dict, assets: Tuple, filename: str = 'temp.png', dpi=600, agents_interest: list = [],
-    reproject: bool = False, projection: str = 'EPSG:3857'
+    reproject: bool = False, projection: str = 'EPSG:3857', to_scale: bool = False
 ) -> None:
     """ Visualize simple scenes """
     bkg, hold_lines, graph_nx, limits, agents = assets
@@ -133,6 +139,9 @@ def plot_scene_gif(
     north, east, south, west, z_min, z_max = limits
     if reproject:
         north, east, south, west = C.transform_extent(limits, C.MAP_CRS, projection)
+
+    if to_scale:
+        C.agents_to_scale(agents, limits, bkg)
 
     # create directory for saving frames
 
@@ -167,7 +176,8 @@ def plot_scene_gif(
         # print(f"Time to plot timestep {t}: {plot_time:.4f} seconds")
         # save_time = time()
         # Use Agg backend for faster, non-interactive rendering
-        C.save(ax, filename=os.path.join(out_dir, f"{tag_name}_{t:04d}.png"), dpi=dpi)
+        C.save(ax, filename=os.path.join(out_dir, f"{tag_name}_{t:04d}.png"),
+               dpi=dpi,  limits=(west, east, south, north))
 
         # save_time = time() - save_time
         # print(f"Time to save frame {t}: {save_time:.4f} seconds")
