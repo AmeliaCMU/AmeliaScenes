@@ -28,8 +28,8 @@ def run(
     scene_type: str,
     show_scores: bool,
     seed: int,
-    dpi: int
-
+    dpi: int,
+    to_scale: bool
 ):
     assets = load_assets(base_path, airport, graph_file=f'graph_data_{graph_version}')
     tag = 'benchmark' if benchmark else 'xplane' if xplane else traj_version
@@ -83,7 +83,8 @@ def run(
                        scene_type,
                        dpi=dpi,
                        scores=scores,
-                       show_scores=show_scores)
+                       show_scores=show_scores,
+                       to_scale=to_scale)
 
 
 if __name__ == "__main__":
@@ -132,8 +133,7 @@ if __name__ == "__main__":
         "--scene_id",
         type=str,
         default="",
-        help="ID of the scene to visualize. If provided, viz_scene must be provided."
-    )
+        help="ID of the scene to visualize. If provided, viz_scene must be provided.")
     parser.add_argument(
         "--benchmark",
         action='store_true')
@@ -148,8 +148,7 @@ if __name__ == "__main__":
         "--show-scores",
         action='store_true',
         help="Show scores in the scene visualization, if the scene type is equal to 'scores'.",
-        default=False
-    )
+        default=False)
     parser.add_argument(
         "--seed",
         type=int,
@@ -160,5 +159,10 @@ if __name__ == "__main__":
         type=int,
         default=400,
         help="Random seed.")
+    parser.add_argument(
+        "--to_scale",
+        action='store_true',
+        help="Scale agents to the scene limits.",
+        default=False)
     args = parser.parse_args()
     run(**vars(args))

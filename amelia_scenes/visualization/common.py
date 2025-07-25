@@ -14,6 +14,7 @@ from typing import Tuple
 
 from amelia_scenes.utils import global_masks as G
 import matplotlib
+from pyproj import Geod
 
 
 # -------------------------------------------------------------------------------------------------#
@@ -58,6 +59,15 @@ UNKNOWN = 2
 AIRCRAFT_PADDED = 3
 AIRCRAFT_INVALID = 4
 
+AGENT_TYPES = {
+    -1: 'OTHER',
+    0: 'AIRCRAFT',
+    1: 'VEHICLE',
+    2: 'UNKNOWN',
+    3: 'AIRCRAFT_PADDED',
+    4: 'AIRCRAFT_INVALID',
+}
+
 
 KNOTS_TO_MPS = 0.51444445
 KNOTS_TO_KPH = 1.852
@@ -71,6 +81,16 @@ ZOOM = {
     UNKNOWN: 0.015,
     AIRCRAFT_PADDED: 0.015,
     AIRCRAFT_INVALID: 0.015,
+}
+
+# agent dimensions in meters width wise
+AGENT_DIMS = {
+    OTHER: 10,
+    AIRCRAFT: 40,
+    VEHICLE: 3,
+    UNKNOWN: 3,
+    AIRCRAFT_PADDED: 15,
+    AIRCRAFT_INVALID: 15,
 }
 
 AGENT_COLORS = {
@@ -422,3 +442,22 @@ def plot_sequences_cm(
         ax.scatter(traj_ll[:, 1], traj_ll[:, 0], color=traj_color, s=0.2, alpha=alpha)
         if show_scores:
             ax.text(lon, lat, s=round(Z[n], 2), color='black', fontsize='xx-small')
+
+
+def agents_to_scale(agents, limits, bkg):
+    north, east, south, west, _, _ = limits
+    geod = Geod(ellps="WGS84")
+    # Calculate the width of the map in meters (east-west distance at northern latitude)
+    _, _, width_m = geod.inv(west, north, east, north)
+    img_h, img_w, _ = bkg.shape
+    meters_per_pixel = width_m / img_w
+
+    for agent_id in agents:
+        agent_real_width = AGENT_DIMS[agent_id]  # meters
+        icon = agents[agent_id]
+        icon_pixel_width = icon.shape[1]
+        # Desired icon width in pixels so that it matches real-world scale
+        desired_icon_pixel_width = agent_real_width * meters_per_pixel
+        # Zoom factor to scale icon to desired pixel width
+        ZOOM[agent_id] = desired_icon_pixel_width / icon_pixel_width / 10
+        # breakpoint()

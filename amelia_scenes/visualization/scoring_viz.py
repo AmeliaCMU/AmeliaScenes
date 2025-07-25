@@ -85,13 +85,15 @@ def plot_scene_strategy(
 
 def plot_scene_scores(
     scene: dict, assets: Tuple, filename: str, scores: dict = {}, show_scores: bool = False, dpi=600,
-    reproject: bool = False, projection: str = 'EPSG:3857'
+    reproject: bool = False, projection: str = 'EPSG:3857', to_scale: bool = False
 ) -> None:
     bkg, hold_lines, graph_nx, limits, agents = assets
     limits, ref_data = limits
     north, east, south, west, z_min, z_max = limits
     if reproject:
         north, east, south, west = C.transform_extent(limits, C.MAP_CRS, projection)
+    if to_scale:
+        C.agents_to_scale(agents, limits, bkg)
 
     # Normalize features
     agent_scores, scene_score = scores['agent_scores'], scores['scene_scores']
