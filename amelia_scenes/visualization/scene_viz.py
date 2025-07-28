@@ -162,6 +162,8 @@ def plot_scene_gif(
         fig, ax = plt.subplots()
         ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3)
 
+        # breakpoint()
+
         # bkg_time = time() - start_time
         # print(f"Time to plot background: {bkg_time:.4f} seconds")
         # Plots airport map as background
@@ -177,7 +179,7 @@ def plot_scene_gif(
         # save_time = time()
         # Use Agg backend for faster, non-interactive rendering
         C.save(ax, filename=os.path.join(out_dir, f"{tag_name}_{t:04d}.png"),
-               dpi=dpi,  limits=(west, east, south, north))
+               dpi=dpi, force_extent=True, limits=(west, east, south, north))
 
         # save_time = time() - save_time
         # print(f"Time to save frame {t}: {save_time:.4f} seconds")
