@@ -28,7 +28,7 @@ STYLES = {
     'weight': 'bold',
 }
 
-OFFSET = 0.008
+OFFSET = 0.000
 EPS = 1e-5
 
 COLOR_CODES = {
@@ -444,20 +444,27 @@ def plot_sequences_cm(
             ax.text(lon, lat, s=round(Z[n], 2), color='black', fontsize='xx-small')
 
 
-def agents_to_scale(agents, limits, bkg):
+def agents_to_scale(agents, limits, bkg, zoom_factor: float = 100.0) -> None:
     north, east, south, west, _, _ = limits
     geod = Geod(ellps="WGS84")
     # Calculate the width of the map in meters (east-west distance at northern latitude)
     _, _, width_m = geod.inv(west, north, east, north)
-    img_h, img_w, _ = bkg.shape
-    meters_per_pixel = width_m / img_w
+    fig, dummy_ax = plt.subplots()
+    dummy_ax.imshow(bkg, zorder=0, extent=[west, east, south, north], alpha=0.3)
+    # img_h, img_w, _ = bkg.shape
+    box = dummy_ax.get_window_extent()
+    img_w = box.width / dummy_ax.figure.dpi  # Convert width from pixels to inches
+    pixels_per_meter = img_w / width_m
+    # breakpoint()
+    # dummy_ax.close()
 
     for agent_id in agents:
+
         agent_real_width = AGENT_DIMS[agent_id]  # meters
         icon = agents[agent_id]
         icon_pixel_width = icon.shape[1]
         # Desired icon width in pixels so that it matches real-world scale
-        desired_icon_pixel_width = agent_real_width * meters_per_pixel
+        desired_icon_pixel_width = agent_real_width * pixels_per_meter
         # Zoom factor to scale icon to desired pixel width
-        ZOOM[agent_id] = desired_icon_pixel_width / icon_pixel_width / 10
+        ZOOM[agent_id] = (desired_icon_pixel_width / icon_pixel_width) * zoom_factor
         # breakpoint()
