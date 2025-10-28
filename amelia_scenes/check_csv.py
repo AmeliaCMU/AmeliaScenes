@@ -12,13 +12,17 @@ def compare_csv_files(dir1, dir2):
     files_dir1 = get_csv_files(dir1)
     files_dir2 = get_csv_files(dir2)
 
+    missing_in_dir2 = files_dir1 - files_dir2
+    if missing_in_dir2:
+        print(f"Files in {dir1} but not in {dir2}: {missing_in_dir2}")
+
     common_files = files_dir1.intersection(files_dir2)
     if not common_files:
         print("No common CSV files found in the directories.")
         return
 
     for file in common_files:
-        print(f"Comparing {file}...")
+        # print(f"Comparing {file}...")
         path1 = os.path.join(dir1, file)
         path2 = os.path.join(dir2, file)
 
