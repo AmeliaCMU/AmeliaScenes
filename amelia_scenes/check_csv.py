@@ -27,7 +27,8 @@ def compare_csv_files(dir1, dir2):
             df2 = pd.read_csv(path2)
 
             if df1.equals(df2):
-                print(f"{file}: No differences found.")
+                # print(f"{file}: No differences found.")
+                pass
             else:
                 print(f"{file}: Differences found.")
         except Exception as e:
