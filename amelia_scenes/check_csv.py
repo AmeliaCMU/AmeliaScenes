@@ -46,9 +46,9 @@ def compare_csv_files(dir1, dir2):
 
 
 if __name__ == "__main__":
-    # dir1 = "/data/aviation_dev/amelia_HF/Amelia-10/data/traj_data_a10v08/raw_trajectories"
-    dir1 = "/data/aviation_dev/amelia/traj_data_a10v08/raw_trajectories"
-    dir2 = "/data/aviation/amelia/traj_data_a10v08/raw_trajectories"
+    dir1 = "/data/aviation_dev/amelia_HF/Amelia-10/data/traj_data_a10v08/raw_trajectories"
+    # dir1 = "/data/aviation_dev/amelia/traj_data_a10v08/raw_trajectories"
+    dir2 = "/data/aviation/amelia_dev/traj_data_a10v08/raw_trajectories"
     airport_list = ["kbos", "kdca", "kewr", "kjfk", "klax", "kmdw", "kmsy", "ksea", "ksfo", "panc"]
 
     if not os.path.isdir(dir1) or not os.path.isdir(dir2):
