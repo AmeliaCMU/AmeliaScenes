@@ -30,6 +30,12 @@ def compare_csv_files(dir1, dir2):
             df1 = pd.read_csv(path1)
             df2 = pd.read_csv(path2)
 
+            if list(df1.columns) != list(df2.columns):
+                print(f"{file}: Column mismatch.")
+                print(f"Columns in {dir1}: {list(df1.columns)}")
+                print(f"Columns in {dir2}: {list(df2.columns)}")
+                continue
+
             if df1.equals(df2):
                 # print(f"{file}: No differences found.")
                 pass
