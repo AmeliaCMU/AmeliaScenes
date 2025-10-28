@@ -30,16 +30,23 @@ def compare_csv_files(dir1, dir2):
             df1 = pd.read_csv(path1)
             df2 = pd.read_csv(path2)
 
-            # Skip files with invalid column headers
-            if not df1.columns or not df2.columns or 'version' in df1.columns[0].lower():
+            # Skip files with invalid or unexpected column headers
+            # Avoid ambiguous truth value on pandas Index by using `.empty` and safe string casts
+            if df1.columns.empty or df2.columns.empty:
+                print(f"{file}: Skipping due to empty column headers.")
+                continue
+
+            first_col1 = str(df1.columns[0]).lower()
+            first_col2 = str(df2.columns[0]).lower()
+            if 'version' in first_col1 or 'version' in first_col2:
                 print(f"{file}: Skipping due to invalid or unexpected column headers.")
                 continue
 
-            # if list(df1.columns) != list(df2.columns):
-            #     print(f"{file}: Column mismatch.")
-            #     print(f"Columns in {dir1}: {list(df1.columns)}")
-            #     print(f"Columns in {dir2}: {list(df2.columns)}")
-            #     continue
+            if list(df1.columns) != list(df2.columns):
+                print(f"{file}: Column mismatch.")
+                print(f"Columns in {dir1}: {list(df1.columns)}")
+                print(f"Columns in {dir2}: {list(df2.columns)}")
+                continue
 
             if df1.equals(df2):
                 # print(f"{file}: No differences found.")
