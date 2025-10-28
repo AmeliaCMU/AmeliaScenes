@@ -30,6 +30,11 @@ def compare_csv_files(dir1, dir2):
             df1 = pd.read_csv(path1)
             df2 = pd.read_csv(path2)
 
+            # Skip files with invalid column headers
+            if not df1.columns or not df2.columns or 'version' in df1.columns[0].lower():
+                print(f"{file}: Skipping due to invalid or unexpected column headers.")
+                continue
+
             if list(df1.columns) != list(df2.columns):
                 print(f"{file}: Column mismatch.")
                 print(f"Columns in {dir1}: {list(df1.columns)}")
@@ -46,9 +51,9 @@ def compare_csv_files(dir1, dir2):
 
 
 if __name__ == "__main__":
-    dir1 = "/data/aviation_dev/amelia_HF/Amelia-10/data/traj_data_a10v08/raw_trajectories"
+    dir1 = "/data/aviation/Amelia-10/data/traj_data_a10v08/raw_trajectories"
     # dir1 = "/data/aviation_dev/amelia/traj_data_a10v08/raw_trajectories"
-    dir2 = "/data/aviation_dev/amelia/traj_data_a10v08/raw_trajectories"
+    dir2 = "/data/aviation/amelia/traj_data_a10v08/raw_trajectories"
     airport_list = ["kbos", "kdca", "kewr", "kjfk", "klax", "kmdw", "kmsy", "ksea", "ksfo", "panc"]
 
     if not os.path.isdir(dir1) or not os.path.isdir(dir2):
