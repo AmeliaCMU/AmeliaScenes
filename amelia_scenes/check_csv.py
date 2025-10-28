@@ -18,6 +18,7 @@ def compare_csv_files(dir1, dir2):
         return
 
     for file in common_files:
+        print(f"Comparing {file}...")
         path1 = os.path.join(dir1, file)
         path2 = os.path.join(dir2, file)
 
