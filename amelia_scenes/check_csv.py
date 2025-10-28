@@ -35,11 +35,11 @@ def compare_csv_files(dir1, dir2):
                 print(f"{file}: Skipping due to invalid or unexpected column headers.")
                 continue
 
-            if list(df1.columns) != list(df2.columns):
-                print(f"{file}: Column mismatch.")
-                print(f"Columns in {dir1}: {list(df1.columns)}")
-                print(f"Columns in {dir2}: {list(df2.columns)}")
-                continue
+            # if list(df1.columns) != list(df2.columns):
+            #     print(f"{file}: Column mismatch.")
+            #     print(f"Columns in {dir1}: {list(df1.columns)}")
+            #     print(f"Columns in {dir2}: {list(df2.columns)}")
+            #     continue
 
             if df1.equals(df2):
                 # print(f"{file}: No differences found.")
