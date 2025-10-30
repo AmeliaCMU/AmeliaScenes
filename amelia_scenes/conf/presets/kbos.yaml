@@ -1,0 +1,30 @@
+# @package _global_
+# SETUP PATH NAMES
+airport: [
+  kbos,
+] # ICAO code or use keyword all for all airports
+base_dir: datasets/amelia
+traj_version: a10v08
+graph_version: a10v01os
+out_version: Null # Set to null to omit versioning for output
+
+# PROCESSING SETTINGS
+parallel: True
+overwrite: True
+benchmark: False
+xplane: False
+perc_process: 0.1
+seed: 42
+jobs: 8
+
+# SCENE PROCESSING SETTINGS
+pred_lens: [20, 50]
+hist_len: 10
+skip: 1
+min_agents: 2
+max_agents: 30
+min_valid_points: 2
+
+
+# GENERATE DATASET SUMMARY
+dataset_summary: True
