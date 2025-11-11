@@ -29,13 +29,45 @@ Finally, **AmeliaScenes** also provides a dataset splitting script with various 
 
 ### Dataset
 
-To run this repository, you first need to download the amelia dataset. Follow the instructions [here](https://ameliacmu.github.io/amelia-dataset/) to download the dataset.
+To run this repository, you first need to download the amelia dataset. For more details, follow go to the following link [here](https://ameliacmu.github.io/amelia-dataset/). The dataset is hosted in HuggingFace in the in **[AmeliaCMU](https://huggingface.co/AmeliaCMU)** organization. Currenlty three are two versions of the dataset available:
 
-Once downloaded, create a symbolic link into  `datasets`:
+- **(Amelia-10)[https://huggingface.co/datasets/AmeliaCMU/Amelia-10]**: which contains 1 month of data for each of 10 airports.
+- **(Amelia42-Mini)[https://huggingface.co/datasets/AmeliaCMU/Amelia42-Mini]**: which contains 15 days of data for each of 42 airports.
+
+In order to download the dataset, git lfs is required. Please follow the instructions [here](https://git-lfs.com) to install git lfs.
+
+To download the Amelia-10 dataset, run the following command:
+
+```bash
+git lfs install
+git clone https://huggingface.co/datasets/AmeliaCMU/Amelia-10
+```
+
+Once downloaded, create a symbolic link into `datasets` from the AmeliaScenes repository:
 
 ```bash
 cd datasets
-ln -s /path/to/amelia .
+ln -s /path/to/Amelia-10/data amelia
+```
+
+the resulting structure should look like this:
+
+```bash
+|-- AmeliaScenes
+    |-- datasets
+        |-- amelia
+            |-- traj_data_a10v08
+                |-- raw_trajectories
+                    |-- kbos
+                    |-- kdca
+                    |-- kewr
+                    |-- kjfk
+                    |-- klax
+                    |-- kmdw
+                    |-- kmsy
+                    |-- ksea
+                    |-- ksfo
+                    |-- panc
 ```
 
 ### Installation
@@ -65,33 +97,21 @@ conda activate amelia
 
 ### Generating scenes from raw data
 
-Once you've installed the tools, and created the amelia environment, run:
+Once you've installed the tools, and created the amelia environment, to process the data and generate the '.pkl' files, run:
 
 ```bash
 cd amelia_scenes
-python run_processor.py --airport <airport_icao> --parallel
+python amelia_scenes/run_processor.py presets=amelia_10
 ```
+
+This script will process all the raw trajectory CSV files found in `datasets/amelia/traj_data_a10v08/raw_trajectories/<airport_icao>/` and generate scenes for each the airports `kbos`, `kdca`, `kewr`, `kjfk`, `klax`, `kmdw`, `kmsy`, `ksea`, `ksfo` and `panc`.
 
 where:
 
 - `<airport_icao>`: [ICAO](https://en.wikipedia.org/wiki/ICAO_airport_code) code of the airport to be processed. It can be one of the following: `kbos`, `kdca`, `kewr`, `kjfk`, `klax`, `kmdw`, `kmsy`, `ksea`, `ksfo`, `panc`. By default it is set to `kbos`.
 - `<parallel>`: If the processing should be done in parallel. By default it is set to `True`.
 
-Additional parameters can also be specified:
-
-```bash
-python run_processor.py --airport <airport_icao> --to_process <scenes | metas | both> --parallel \
-                        --base_dir <path_to_dataset> \
-                        --traj_version <version>
-                        --graph_version <version> \
-                        --parallel <parallel> \
-                        --overwrite <overwrite> \
-                        --perc_process <percentage> \
-                        --seed <seed> \
-                        --jobs <jobs>
-```
-
-where:
+Since the script utilizes python hydra, additional parameters can also be changed on the configuration file found in `amelia_scenes/configs/processor/amelia_10.yaml`. For example, to change the percentage of data to be processed, the version of the trajectory data, or the number of parallel jobs, the script can be changed. As a recommendation allways process the data in parallel, unless debugging.
 
 - `<to_process>`: What to process. By default is set to `both`. Possible options are:
   - `scenes`: only generate scenes from the raw files
@@ -150,7 +170,7 @@ Once the scenes are generated, the `run_create_splits.py` script can be run to s
 
 ``` bash
 cd amelia_scenes
-python run_create_splits.py --split_type <random | day | month>
+python run_create_splits.py --split_type <random | day | month> --airport <airport_icao>
 ```
 
 Where:
@@ -159,6 +179,7 @@ Where:
   - `random`: Randomly splits the dataset into `train/val/test` sets.
   - `day`: Daily splits the dataset into `train/val/test` sets.
   - `month`: Monthly splits the dataset into `train/val/test` sets.
+- `<airport_icao>`: ICAO code of the airport. By default it is set to `all`.
 
 Additional parameters can also be specified:
 
@@ -168,11 +189,13 @@ python run_create_splits.py --split_type <random | day | month> \
                         --base_dir <path_to_dataset> \
                         --seed <seed> \
                         --traj_version <version> \
+                        --airport <airport_icao>
 ```
 
 - `<base_dir>`: Path to the dataset. By default the path is set to `../datasets/amelia`.
 - `<traj_version>`: Version of the trajectory data. By default it is set to `a10v08` to match the current released version.
 - `<seed>`: Seed for the random number generator. By default it is set to `42`.
+- `<airport>`: ICAO code of the airport. By default it is set to `all`.
 
 #### Expected Output
 
