@@ -104,12 +104,8 @@ cd amelia_scenes
 python amelia_scenes/run_processor.py presets=amelia_10
 ```
 
-This script will process all the raw trajectory CSV files found in `datasets/amelia/traj_data_a10v08/raw_trajectories/<airport_icao>/` and generate scenes for each the airports `kbos`, `kdca`, `kewr`, `kjfk`, `klax`, `kmdw`, `kmsy`, `ksea`, `ksfo` and `panc`.
+This script will process all the raw trajectory CSV files found in `datasets/amelia/traj_data_a10v08/raw_trajectories/<airport_icao>/` and generate scenes for each the airports `kbos`, `kdca`, `kewr`, `kjfk`, `klax`, `kmdw`, `kmsy`, `ksea`, `ksfo` and `panc` [ICAO](https://en.wikipedia.org/wiki/ICAO_airport_code).
 
-where:
-
-- `<airport_icao>`: [ICAO](https://en.wikipedia.org/wiki/ICAO_airport_code) code of the airport to be processed. It can be one of the following: `kbos`, `kdca`, `kewr`, `kjfk`, `klax`, `kmdw`, `kmsy`, `ksea`, `ksfo`, `panc`. By default it is set to `kbos`.
-- `<parallel>`: If the processing should be done in parallel. By default it is set to `True`.
 
 Since the script utilizes python hydra, additional parameters can also be changed on the configuration file found in `amelia_scenes/configs/processor/amelia_10.yaml`. For example, to change the percentage of data to be processed, the version of the trajectory data, or the number of parallel jobs, the script can be changed. As a recommendation allways process the data in parallel, unless debugging.
 
