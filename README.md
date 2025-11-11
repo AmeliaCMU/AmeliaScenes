@@ -31,8 +31,8 @@ Finally, **AmeliaScenes** also provides a dataset splitting script with various 
 
 To run this repository, you first need to download the Amelia dataset from **[AmeliaCMU](https://huggingface.co/AmeliaCMU)**. Currently, there are two versions of the dataset available:
 
-- **(Amelia-10)[https://huggingface.co/datasets/AmeliaCMU/Amelia-10]**: which contains 1 month of data for each of 10 airports.
-- **(Amelia42-Mini)[https://huggingface.co/datasets/AmeliaCMU/Amelia42-Mini]**: which contains 15 days of data for each of 42 airports.
+- **[Amelia-10](https://huggingface.co/datasets/AmeliaCMU/Amelia-10)**: which contains 1 month of data for each of 10 airports.
+- **[Amelia42-Mini](https://huggingface.co/datasets/AmeliaCMU/Amelia42-Mini)**: which contains 15 days of data for each of 42 airports.
 
 To download the dataset, install Git LFS ([here](https://git-lfs.com)) and then, run the following command:
 
