@@ -36,4 +36,4 @@ min_valid_points: 2
 
 
 # GENERATE DATASET SUMMARY
-dataset_summary: True
+dataset_summary: False

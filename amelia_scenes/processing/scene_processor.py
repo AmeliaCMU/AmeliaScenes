@@ -268,6 +268,9 @@ class SceneProcessor:
             # of the sequence or less if it disappears earlier.
             pad_end = frames.index(agent_seq[-1, 0]) - seq_idx + 1
 
+            if pad_end - pad_front != self.seq_len:
+                continue
+
             # Scale altitude
             mx = self.ref_data.limits.Altitude.max
             mn = self.ref_data.limits.Altitude.min
@@ -295,7 +298,8 @@ class SceneProcessor:
             valid_agent_list.append(valid)
 
             # TODO: Impute needs to be debugged. Imputing should not happen since it was done in SWIM.
-            agent_seq = C.impute(agent_seq, pad_end - pad_front)  # self.seq_len)
+            # agent_seq = C.impute(agent_seq, pad_end - pad_front)  # self.seq_len)
+            agent_seq = C.impute(agent_seq, self.seq_len)  # self.seq_len)
             valid_mask = agent_seq[:, G.RAW_IDX.Interp].astype(bool)
             agent_masks[num_agents_considered, pad_front:pad_end] = valid_mask
 
